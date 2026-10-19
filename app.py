@@ -13,7 +13,6 @@ from chat_bot import (
     load_faq_records,
 )
 
-
 PROJECT_TITLE = "Assistente CustoJusto"
 WELCOME_MESSAGE = (
     "Olá! Posso ajudar com dúvidas sobre anúncios, pesquisas, conta, contactos, "
@@ -81,7 +80,9 @@ def main() -> None:
         except Exception as exc:
             st.caption("Base vetorial ainda não inicializada")
             st.error(str(exc))
-        st.button("Reiniciar conversa", on_click=reset_conversation, use_container_width=True)
+        st.button(
+            "Reiniciar conversa", on_click=reset_conversation, use_container_width=True
+        )
 
     st.title(PROJECT_TITLE)
     st.caption("Chatbot RAG para apoio ao cliente com base nas FAQs do website.")

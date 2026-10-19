@@ -17,7 +17,6 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from pydantic import BaseModel, Field
 
-
 load_dotenv()
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -166,7 +165,11 @@ def ensure_vector_store(
     faq_records = records or load_faq_records()
     version = faq_version(faq_records)
     collection = get_collection()
-    stored_version = VERSION_PATH.read_text(encoding="utf-8").strip() if VERSION_PATH.exists() else ""
+    stored_version = (
+        VERSION_PATH.read_text(encoding="utf-8").strip()
+        if VERSION_PATH.exists()
+        else ""
+    )
 
     if stored_version == version and collection.count() == len(faq_records):
         return collection
@@ -214,7 +217,9 @@ def validate_question(client: OpenAI, question: str) -> QuestionValidation:
     return response.output_parsed
 
 
-def retrieve_faqs(client: OpenAI, collection: Collection, question: str) -> list[RetrievedFAQ]:
+def retrieve_faqs(
+    client: OpenAI, collection: Collection, question: str
+) -> list[RetrievedFAQ]:
     query_embedding = create_embeddings(client, [question])[0]
     response = collection.query(
         query_embeddings=[query_embedding],
@@ -251,7 +256,10 @@ def format_evidence(results: list[RetrievedFAQ]) -> str:
             f"Pergunta FAQ: {result.question}\n"
             f"Resposta FAQ: {result.answer}"
         )
-    return "\n\n---\n\n".join(blocks) or "Nenhuma FAQ atingiu o limiar mínimo de relevância."
+    return (
+        "\n\n---\n\n".join(blocks)
+        or "Nenhuma FAQ atingiu o limiar mínimo de relevância."
+    )
 
 
 def generate_faq_answer(
