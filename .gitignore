@@ -21,4 +21,4 @@ Thumbs.db
 reports/
 
 # Streamlit agent skills (environment-specific symlinks)
-  .agents/skills/developing-with-streamlit
+.agents/skills/developing-with-streamlit
