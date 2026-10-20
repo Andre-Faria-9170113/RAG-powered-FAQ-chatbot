@@ -31,12 +31,12 @@ MIN_SIMILARITY = float(os.getenv("MIN_SIMILARITY", "0.35"))
 TOP_K = int(os.getenv("TOP_K", "4"))
 
 CONTACT_FORMS: dict[str, str] = {
-    "problemas_anuncios": "/contacto?motivo=problemas-com-anuncios",
-    "problemas_tecnicos": "/contacto?motivo=problemas-tecnicos",
-    "conta_login": "/contacto?motivo=conta-e-login",
-    "pagamentos_servicos": "/contacto?motivo=pagamentos-e-servicos",
-    "seguranca_denuncias": "/contacto?motivo=seguranca-e-denuncias",
-    "geral": "/contacto",
+    "problemas_anuncios": "/ajuda-contacto?section=7",
+    "problemas_tecnicos": "/ajuda-contacto?section=8",
+    "pagamentos_servicos": "/ajuda-contacto?section=12",
+    "contactos_anuncios": "/ajuda-contacto?section=6",
+    "conta_utilizador": "/ajuda-contacto?section=17",
+    "outros": "/ajuda-contacto?section=11",
 }
 
 
@@ -87,10 +87,10 @@ class FAQResponse(BaseModel):
     relevant_contact_form: Literal[
         "problemas_anuncios",
         "problemas_tecnicos",
-        "conta_login",
         "pagamentos_servicos",
-        "seguranca_denuncias",
-        "geral",
+        "contactos_anuncios",
+        "conta_utilizador",
+        "outros",
         "none",
     ]
     suggested_response: str
@@ -278,7 +278,13 @@ def generate_faq_answer(
             "em missing_info e faz uma pergunta de clarificação. Se nenhuma FAQ "
             "resolver o pedido, define confidence_score='low', sources=[], escolhe "
             "o relevant_contact_form mais adequado, e sugere encaminhamento para "
-            "apoio. Nunca inventes políticas, preços, prazos ou links."
+            "apoio. Usa 'outros' como fallback quando achares que o user deve ser "
+            "encaminhado para o formulário de contacto, mas o tópico não se enquadra "
+            "em nenhum dos outros relevant_contact_form. Quando o utilizador faz um "
+            "pedido amplo sobre um tópico e as FAQs recuperadas cobrem esse tópico, "
+            "apresenta as FAQs mais relevantes e pergunta que detalhe pretende esclarecer; "
+            "não trates isso como ausência de fontes. Nunca inventes políticas, preços, "
+            "prazos ou links."
         ),
         input=[
             *history[-6:],
