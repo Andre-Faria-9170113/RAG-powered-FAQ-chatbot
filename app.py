@@ -9,7 +9,6 @@ from chat_bot import (
     FAQResponse,
     answer_user_question,
     compact_history_if_needed,
-    ensure_vector_store,
     load_faq_records,
 )
 
@@ -18,18 +17,22 @@ WELCOME_MESSAGE = (
     "Olá! Posso ajudar com dúvidas sobre anúncios, pesquisas, conta, contactos, "
     "serviços pagos e outras FAQs do website."
 )
+SUGGESTIONS = {
+    ":material/campaign: Publicar anúncio": "Como posso publicar um anúncio?",
+    ":material/search: Pesquisar anúncio": "Como pesquisar um anúncio?",
+    ":material/delete: Eliminar anúncio": "Como faço para eliminar o meu anúncio?",
+}
 
 
 def initialise_session_state() -> None:
-    if "messages" not in st.session_state:
-        st.session_state.messages = [{"role": "assistant", "content": WELCOME_MESSAGE}]
-    if "last_structured_answer" not in st.session_state:
-        st.session_state.last_structured_answer = None
+    st.session_state.setdefault(
+        "messages",
+        [{"role": "assistant", "content": WELCOME_MESSAGE}],
+    )
 
 
 def reset_conversation() -> None:
     st.session_state.messages = [{"role": "assistant", "content": WELCOME_MESSAGE}]
-    st.session_state.last_structured_answer = None
 
 
 @st.cache_resource(show_spinner=False)
@@ -37,17 +40,18 @@ def cached_client() -> OpenAI:
     return OpenAI()
 
 
-@st.cache_resource(show_spinner=False)
-def warm_vector_store() -> int:
-    client = cached_client()
-    records = load_faq_records()
-    ensure_vector_store(client, records)
-    return len(records)
+@st.cache_data(show_spinner=False)
+def cached_faq_count() -> int:
+    return len(load_faq_records())
 
 
-def render_message(role: str, content: str) -> None:
+def render_message(message: dict) -> None:
+    role = message["role"]
+    content = message["content"]
     with st.chat_message(role):
         st.markdown(content)
+        if details := message.get("details"):
+            render_answer_details(FAQResponse.model_validate(details))
 
 
 def render_answer_details(answer: FAQResponse | None) -> None:
@@ -68,56 +72,55 @@ def render_answer_details(answer: FAQResponse | None) -> None:
             st.write(f"Encaminhamento: `{answer.relevant_contact_form}`")
 
 
-def main() -> None:
-    st.set_page_config(page_title=PROJECT_TITLE, page_icon="💬", layout="centered")
-    initialise_session_state()
+def has_user_turn() -> bool:
+    return any(message["role"] == "user" for message in st.session_state.messages)
 
-    with st.sidebar:
-        st.header("Estado")
-        try:
-            faq_count = warm_vector_store()
-            st.caption(f"Base vetorial pronta · {faq_count} FAQs indexadas")
-        except Exception as exc:
-            st.caption("Base vetorial ainda não inicializada")
-            st.error(str(exc))
-        st.button(
-            "Reiniciar conversa", on_click=reset_conversation, use_container_width=True
-        )
 
-    st.title(PROJECT_TITLE)
-    st.caption("Chatbot RAG para apoio ao cliente com base nas FAQs do website.")
+def suggestion_prompt() -> str | None:
+    if has_user_turn():
+        return None
+    selected = st.pills(
+        "Experimente perguntar",
+        list(SUGGESTIONS.keys()),
+        key="suggestion",
+        label_visibility="collapsed",
+        width="stretch",
+        wrap=True,
+    )
+    return SUGGESTIONS[selected] if selected else None
 
-    for message in st.session_state.messages:
-        render_message(message["role"], message["content"])
 
-    render_answer_details(st.session_state.last_structured_answer)
-
-    prompt = st.chat_input("Escreva a sua pergunta")
-    if not prompt:
-        return
-
+def answer_prompt(prompt: str) -> None:
     st.session_state.messages.append({"role": "user", "content": prompt})
-    render_message("user", prompt)
+    render_message({"role": "user", "content": prompt})
 
     with st.chat_message("assistant"):
-        with st.spinner("A validar o pedido e a consultar as FAQs..."):
+        with st.status(":shimmer[A validar e consultar as FAQs]", type="compact") as status:
             try:
                 answer, structured_answer, _validation = answer_user_question(
                     prompt,
                     st.session_state.messages[:-1],
                     client=cached_client(),
                 )
-                st.session_state.last_structured_answer = structured_answer
-                st.markdown(answer)
+                status.update(label="FAQs consultadas", state="complete")
             except Exception as exc:
                 answer = (
                     "Não consegui processar o pedido neste momento. "
                     f"Detalhe técnico: `{exc}`"
                 )
-                st.session_state.last_structured_answer = None
-                st.error(answer)
+                structured_answer = None
+                status.update(label="Não foi possível concluir", state="error")
 
-    st.session_state.messages.append({"role": "assistant", "content": answer})
+        if structured_answer is None and "Detalhe técnico:" in answer:
+            st.error(answer)
+        else:
+            st.markdown(answer)
+            render_answer_details(structured_answer)
+
+    assistant_message = {"role": "assistant", "content": answer}
+    if structured_answer is not None:
+        assistant_message["details"] = structured_answer.model_dump()
+    st.session_state.messages.append(assistant_message)
 
     try:
         st.session_state.messages = compact_history_if_needed(
@@ -126,6 +129,45 @@ def main() -> None:
         )
     except Exception:
         pass
+
+
+def main() -> None:
+    st.set_page_config(
+        page_title=PROJECT_TITLE,
+        page_icon=":material/support_agent:",
+        layout="centered",
+    )
+    initialise_session_state()
+
+    with st.sidebar:
+        st.header("Estado")
+        try:
+            faq_count = cached_faq_count()
+            st.caption(f"Corpus carregado · {faq_count} FAQs disponíveis")
+            st.caption("A base vetorial é preparada quando envia uma pergunta válida.")
+        except Exception as exc:
+            st.caption("Corpus de FAQs indisponível")
+            st.error(str(exc))
+        st.button(
+            "Reiniciar conversa",
+            on_click=reset_conversation,
+            icon=":material/restart_alt:",
+            width="stretch",
+        )
+
+    st.title(PROJECT_TITLE)
+    st.caption("Chatbot RAG para apoio ao cliente com base nas FAQs do website.")
+
+    for message in st.session_state.messages:
+        render_message(message)
+
+    prompt = suggestion_prompt()
+    prompt = prompt or st.chat_input("Escreva a sua pergunta", submit_mode="disable")
+
+    if not prompt:
+        return
+
+    answer_prompt(prompt)
 
 
 if __name__ == "__main__":
