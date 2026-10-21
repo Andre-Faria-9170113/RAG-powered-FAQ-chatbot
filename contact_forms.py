@@ -86,8 +86,26 @@ def format_routing_context(forms: list[ContactForm]) -> str:
     return "\n".join(lines)
 
 
-CONTACT_CATALOG = load_contact_forms()
+try:
+    CONTACT_CATALOG = load_contact_forms()
+except FileNotFoundError:
+    # Startup refresh will populate the catalog before chat is enabled.
+    CONTACT_CATALOG = []
 CONTACT_FORMS = {form.key: form.url for form in CONTACT_CATALOG}
 CONTACT_LABELS = {form.key: form.label for form in CONTACT_CATALOG}
-CONTACT_FORMS_VERSION = contact_forms_version(CONTACT_CATALOG)
+CONTACT_FORMS_VERSION = contact_forms_version(CONTACT_CATALOG) if CONTACT_CATALOG else ""
 CONTACT_ROUTING_CONTEXT = format_routing_context(CONTACT_CATALOG)
+
+
+def reload_contact_forms() -> None:
+    """Reload a refreshed snapshot without invalidating imported mapping references."""
+    global CONTACT_FORMS_VERSION, CONTACT_ROUTING_CONTEXT
+
+    forms = load_contact_forms()
+    CONTACT_CATALOG[:] = forms
+    CONTACT_FORMS.clear()
+    CONTACT_FORMS.update((form.key, form.url) for form in forms)
+    CONTACT_LABELS.clear()
+    CONTACT_LABELS.update((form.key, form.label) for form in forms)
+    CONTACT_FORMS_VERSION = contact_forms_version(forms)
+    CONTACT_ROUTING_CONTEXT = format_routing_context(forms)

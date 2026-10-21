@@ -2,11 +2,12 @@ import json
 import unittest
 from copy import deepcopy
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import httpx
 from pydantic import ValidationError
 
+import contact_forms
 from chat_bot import FAQResponse, QuestionValidation, append_contact_link, generate_faq_answer, validate_question
 from contact_forms import (
     CATALOG_PATH,
@@ -88,6 +89,36 @@ class ContactCatalogTest(unittest.TestCase):
             self.assertIn(form.label, generation_prompt)
             for subject in form.subjects:
                 self.assertIn(subject.label, generation_prompt)
+
+    def test_reloaded_catalog_updates_existing_mapping_aliases_and_prompts(self) -> None:
+        original_forms = CONTACT_FORMS
+        original_labels = CONTACT_LABELS
+        updated = deepcopy(CONTACT_CATALOG)
+        updated[0].label = "Updated contact label"
+        updated[0].subjects[0].label = "Updated contact subject"
+        client = Mock()
+        try:
+            with patch("contact_forms.load_contact_forms", return_value=updated):
+                contact_forms.reload_contact_forms()
+            self.assertIs(CONTACT_FORMS, original_forms)
+            self.assertIs(CONTACT_LABELS, original_labels)
+            self.assertEqual(CONTACT_LABELS[updated[0].key], updated[0].label)
+            self.assertNotEqual(contact_forms.CONTACT_FORMS_VERSION, CONTACT_FORMS_VERSION)
+            client.responses.parse.return_value = SimpleNamespace(output_parsed=QuestionValidation(
+                is_valid_question=True, suggested_response="", standalone_question="Question"
+            ))
+            validate_question(client, "Question")
+            self.assertIn("Updated contact subject", client.responses.parse.call_args.kwargs["instructions"])
+            answer = FAQResponse(
+                confidence_score="low", relevant_contact_form=updated[0].key,
+                suggested_response="Contact support.",
+            )
+            client.responses.parse.return_value = SimpleNamespace(output_parsed=answer)
+            generate_faq_answer(client, "Question", [], [])
+            self.assertIn("Updated contact subject", client.responses.parse.call_args.kwargs["instructions"])
+            self.assertIn("[Updated contact label]", append_contact_link(answer))
+        finally:
+            contact_forms.reload_contact_forms()
 
 
 class ContactScraperTest(unittest.TestCase):

@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import logging
 
+import httpx
 import streamlit as st
 from openai import OpenAI
 
+from contact_forms import reload_contact_forms
+from refresh_website_data import refresh as refresh_website_data
 from chat_bot import (
     FAQResponse,
     answer_user_question,
@@ -53,8 +56,12 @@ def cached_client() -> OpenAI:
     return OpenAI()
 
 
-@st.cache_data(show_spinner=False)
-def cached_faq_count() -> int:
+@st.cache_resource(show_spinner=False, max_entries=1)
+def prepare_website_data() -> int:
+    """Complete one successful refresh check per server process before any chat work."""
+    with httpx.Client(follow_redirects=True, timeout=20) as client:
+        refresh_website_data(client)
+    reload_contact_forms()
     return len(load_faq_records())
 
 
@@ -170,16 +177,24 @@ def main() -> None:
         layout="centered",
     )
     initialise_session_state()
+    st.title(PROJECT_TITLE)
+    st.caption("Chatbot RAG para apoio ao cliente com base nas FAQs do website.")
+
+    faq_count = None
+    with st.spinner("A verificar as FAQs e os contactos..."):
+        try:
+            faq_count = prepare_website_data()
+        except Exception:
+            LOGGER.exception("Website startup check failed; chat remains blocked")
 
     with st.sidebar:
         st.header("Estado")
-        try:
-            faq_count = cached_faq_count()
+        if faq_count is not None:
             st.caption(f"Corpus carregado · {faq_count} FAQs disponíveis")
             st.caption("A base vetorial é preparada quando envia uma pergunta válida.")
-        except Exception as exc:
+        else:
             st.caption("Corpus de FAQs indisponível")
-            st.error(str(exc))
+            st.button("Tentar novamente", icon=":material/refresh:", key="retry_startup")
         st.button(
             "Reiniciar conversa",
             on_click=reset_conversation,
@@ -187,11 +202,13 @@ def main() -> None:
             width="stretch",
         )
 
-    st.title(PROJECT_TITLE)
-    st.caption("Chatbot RAG para apoio ao cliente com base nas FAQs do website.")
-
     for message in st.session_state.messages:
         render_message(message)
+
+    if faq_count is None:
+        st.error("Não foi possível verificar as FAQs e os contactos. Tente novamente.")
+        st.chat_input("Escreva a sua pergunta", disabled=True, submit_mode="disable")
+        return
 
     pending_prompt = st.session_state.get("pending_prompt")
     st.session_state.pending_prompt = None

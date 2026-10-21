@@ -24,9 +24,42 @@ streamlit run app.py
 - `data/contact_forms.json` pins the ten official contact categories and their
   published subject options. `contact_forms.py` supplies routing context, URLs
   and the structured response's allowed destinations from that catalog.
+- `refresh_website_data.py` checks the website's version meta tag before
+  refreshing both datasets. `data/website_snapshot.json` records the last
+  successful version and snapshot checksums.
 
 See [contact routing](docs/contact-routing.md) for the source, refresh command
 and routing distinctions. The app reads this local snapshot, not the live site.
+On the first page load after server startup, it checks the website version and
+refreshes both snapshots if needed, before accepting questions or embedding FAQs.
+
+## Refresh website data
+
+```bash
+.venv/bin/python refresh_website_data.py
+```
+
+The first run bootstraps both snapshots. Missing `faqs.json`, `contact_forms.json`
+or `website_snapshot.json` also triggers a full bootstrap on the next startup,
+even if the site version is unchanged. With a complete, valid local set, later
+runs make one version-check request and skip both scrapers if
+`<meta name="version" content="...">` has not changed.
+FAQs come exclusively from `script#faqs`, not from HTML accordions.
+The current site inserts that script through JavaScript, so refreshes use
+Playwright with installed Google Chrome or Chromium. To install Chromium:
+
+```bash
+.venv/bin/playwright install chromium
+```
+
+The same refresh runs automatically once per server process on the first page
+load. Successful preparation is shared across sessions and reruns; failures
+disable chat and can be retried. It reloads contact routing and the FAQ count
+before any model calls. No browser is needed for unchanged versions with
+complete snapshots.
+Questions do not repeat the version check. The CLI remains available for manual
+maintenance; restart a running app after a separate manual refresh. See
+[website data](docs/website-data.md) for details.
 
 Generated local vector data is stored in `.chroma/` and ignored by git.
 

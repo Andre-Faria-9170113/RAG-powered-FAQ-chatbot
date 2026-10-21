@@ -39,6 +39,12 @@ a hash of the pinned official contact catalog (excluding its fetch timestamp).
 If FAQs or contact subjects/URLs change, the runner stops until labels and source
 IDs are reviewed and the corresponding hash is updated. This avoids silently
 evaluating old labels against changed sources or routing destinations.
+The separate `data/website_snapshot.json` marker controls
+[website scraping](website-data.md), not label approval or vector-index freshness.
+A new website deployment can leave FAQ/contact content unchanged; in that case
+their evaluation hashes stay valid. The refresher never changes expected labels,
+their hashes or review status automatically. FAQ IDs are positional, so changed
+ordering also requires checking every expected source group.
 Changing label status to `human_reviewed` requires a named `reviewed_by` value.
 That is an attestation by the person editing the dataset, not independent proof
 of an external review. Dataset changes create a new evaluation version/hash and

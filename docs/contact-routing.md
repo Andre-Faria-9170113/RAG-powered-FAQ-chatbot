@@ -1,8 +1,9 @@
 # Official contact routing
 
 Source: [CustoJusto's public contact page](https://www.custojusto.pt/ajuda-contacto),
-retrieved on 2026-10-21. The scraper reads that index and all ten category pages
-using GET requests only; it does not submit forms or access customer data.
+retrieved on 2026-10-21. When the shared check requires a refresh or recovery,
+the scraper reads that index and all ten category pages using GET requests only;
+it does not submit forms or access customer data.
 
 `data/contact_forms.json` records the source URL, UTC retrieval time, category
 labels, section URLs and each published subject option's value and label. An
@@ -55,14 +56,25 @@ links select only the verified section, not an invented preselected subject.
 ## Refresh and review
 
 ```bash
-.venv/bin/python scrape_contact_forms.py
+.venv/bin/python refresh_website_data.py
 .venv/bin/python -c 'from contact_forms import CONTACT_FORMS_VERSION; print(CONTACT_FORMS_VERSION)'
 ```
 
-Scraping is an explicit maintenance command, never part of answering a question.
-A changed section list or mismatched heading aborts the refresh before writing
-the snapshot. If the site's category structure changes, review the scraper's
-section/key mapping and the shared `ContactFormKey` response schema together.
+The app runs the shared refresh on its first page load after server startup,
+before enabling chat or making embeddings. A successful check is cached across
+sessions/reruns; a failed check blocks chat and is retryable. This command also
+remains available for manual maintenance.
+`scrape_contact_forms.py` and `scrape_faqs.py` are aliases for this shared command:
+both snapshots refresh together on bootstrap, missing files or a changed version
+meta tag. An unchanged version with complete, valid snapshots performs no
+scraping or file writes. See
+[website data](website-data.md) for browser setup and the saved version marker.
+A changed section list, mismatched heading or missing/mixed version tags aborts
+the refresh before publishing either snapshot. If the site's category structure
+changes, review the scraper's section/key mapping and the shared `ContactFormKey`
+response schema together. Startup preparation reloads the in-memory contact
+catalog and routing context. Restart a running app after a separate manual
+refresh to reload that catalog and repeat startup preparation.
 
 After a content change, review the routing policy and every evaluation case,
 update `contact_forms_version` in the dataset, increment its version and retain

@@ -19,10 +19,10 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from pydantic import BaseModel, Field
 
+import contact_forms
 from contact_forms import (
     CONTACT_FORMS,
     CONTACT_LABELS,
-    CONTACT_ROUTING_CONTEXT,
     ContactFormKey,
 )
 
@@ -283,7 +283,7 @@ def validate_question(
             "Para um pedido válido que possa seguir para pesquisa, devolve "
             "suggested_response=''; não respondas a factos nesta fase. "
             "Escreve suggested_response em português europeu, com no máximo duas frases."
-            f"\nAssuntos oficiais de contacto:\n{CONTACT_ROUTING_CONTEXT}"
+            f"\nAssuntos oficiais de contacto:\n{contact_forms.CONTACT_ROUTING_CONTEXT}"
         ),
         input=[*conversation_history(history), {"role": "user", "content": question}],
         text_format=QuestionValidation,
@@ -429,7 +429,7 @@ def generate_faq_answer(
             "apresenta as FAQs mais relevantes e pergunta que detalhe pretende esclarecer; "
             "não trates isso como ausência de fontes. Nunca inventes políticas, preços, "
             "prazos ou links."
-            f"\nFormulários e assuntos publicados:\n{CONTACT_ROUTING_CONTEXT}"
+            f"\nFormulários e assuntos publicados:\n{contact_forms.CONTACT_ROUTING_CONTEXT}"
         ),
         input=[
             *conversation_history(history),

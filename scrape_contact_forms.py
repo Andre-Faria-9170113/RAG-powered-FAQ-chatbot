@@ -2,17 +2,15 @@
 
 from __future__ import annotations
 
-import argparse
-import json
 from datetime import datetime, timezone
 from html.parser import HTMLParser
-from pathlib import Path
 from urllib.parse import parse_qs, urljoin, urlparse
 
 import httpx
 
+from website_scraping import fetch_html, require_version
+
 SOURCE_URL = "https://www.custojusto.pt/ajuda-contacto"
-OUTPUT_PATH = Path(__file__).resolve().parent / "data" / "contact_forms.json"
 KEYS_BY_SECTION = {
     "7": "problemas_anuncios",
     "12": "pagamentos_servicos",
@@ -92,25 +90,29 @@ class ContactPageParser(HTMLParser):
             self._in_select = False
 
 
-def read_page(client: httpx.Client, url: str) -> ContactPageParser:
-    response = client.get(url)
-    response.raise_for_status()
-    parsed_url = urlparse(str(response.url))
-    if parsed_url.scheme != "https" or parsed_url.hostname != "www.custojusto.pt":
-        raise ValueError("Unexpected redirect outside the public CustoJusto website.")
+def read_page(
+    client: httpx.Client, url: str, expected_version: str | None = None,
+    html: str | None = None,
+) -> ContactPageParser:
+    html = fetch_html(client, url) if html is None else html
+    if expected_version is not None:
+        require_version(html, expected_version)
     parser = ContactPageParser()
-    parser.feed(response.text)
+    parser.feed(html)
     return parser
 
 
-def scrape(client: httpx.Client) -> dict:
-    index = read_page(client, SOURCE_URL)
+def scrape(
+    client: httpx.Client, expected_version: str | None = None,
+    index_html: str | None = None,
+) -> dict:
+    index = read_page(client, SOURCE_URL, expected_version, html=index_html)
     if set(index.links) != set(KEYS_BY_SECTION):
         raise ValueError("Contact sections changed; review the stable keys before refreshing.")
     forms = []
     for section, label in index.links.items():
         url = f"{SOURCE_URL}?section={section}"
-        page = read_page(client, url)
+        page = read_page(client, url, expected_version)
         if label not in page.headings:
             raise ValueError(f"Expected heading not found for contact section {section}.")
         forms.append({
@@ -129,16 +131,9 @@ def scrape(client: httpx.Client) -> dict:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path, default=OUTPUT_PATH)
-    args = parser.parse_args()
-    with httpx.Client(follow_redirects=True, timeout=20) as client:
-        snapshot = scrape(client)
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(
-        json.dumps(snapshot, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
-    print(f"Snapshot saved to {args.output}")
+    from refresh_website_data import main as refresh_main
+
+    refresh_main()
 
 
 if __name__ == "__main__":

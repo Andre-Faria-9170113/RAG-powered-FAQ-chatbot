@@ -1,0 +1,10 @@
+{
+  "website_version": "1288d905",
+  "version_source_url": "https://www.custojusto.pt/ajuda-contacto",
+  "faq_source_url": "https://www.custojusto.pt/ajuda?section=faq",
+  "fetched_at_utc": "2026-10-21T11:24:53.619967+00:00",
+  "files": {
+    "faqs.json": "c8a1d56b652bd518269d6715c29d30ac4c79994c4f32919843f2c0568c7afff0",
+    "contact_forms.json": "a5e5bd36f9cc7258a8321ea7ac7c4138fdbf15ca4965757f7c4d17dbd7abfac9"
+  }
+}
