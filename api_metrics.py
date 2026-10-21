@@ -10,9 +10,43 @@ from pathlib import Path
 from time import perf_counter
 from typing import Callable, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 PRICING_PATH = Path(__file__).resolve().parent / "data" / "evaluations" / "model_pricing.json"
+
+
+class ValidationIssue(BaseModel):
+    code: str
+    field: str
+
+
+def validation_issues(error: Exception) -> list[ValidationIssue]:
+    """Never export model output, exception messages, contexts or arbitrary field names."""
+    if not isinstance(error, ValidationError):
+        return []
+    codes = {
+        "clarification_rejected", "early_reply_missing", "early_question_present",
+        "retrieval_question_missing", "escalation_destination_missing",
+        "escalation_user_info", "non_escalation_destination", "clarification_detail_missing",
+        "answer_information_gaps", "missing", "string_type", "list_type",
+        "literal_error", "bool_type", "bool_parsing", "extra_forbidden", "json_invalid",
+        "model_type", "model_attributes_type", "value_error",
+    }
+    fields = {
+        "is_valid_question", "suggested_response", "standalone_question", "needs_clarification",
+        "action", "sources", "topics", "confidence_score", "missing_info", "missing_knowledge",
+        "relevant_contact_form", "chunk_id", "question",
+    }
+    return [
+        ValidationIssue(
+            code=item["type"] if item["type"] in codes else "validation_error",
+            field=".".join(
+                str(part) if isinstance(part, int) or part in fields else "unknown_field"
+                for part in item["loc"]
+            ) or "response",
+        )
+        for item in error.errors(include_input=False, include_context=False, include_url=False)
+    ]
 
 
 class ModelRate(BaseModel):
@@ -58,6 +92,7 @@ class APICallMetrics(BaseModel):
     service_tier: str | None = None
     latency_ms: float = Field(default=0, ge=0)
     error_type: str | None = None
+    validation_issues: list[ValidationIssue] = Field(default_factory=list)
     input_tokens: int | None = Field(default=None, ge=0)
     cached_input_tokens: int | None = Field(default=None, ge=0)
     cache_write_tokens: int | None = Field(default=None, ge=0)
@@ -153,6 +188,7 @@ def api_call(stage: str, operation: Callable, **kwargs):
         response = operation(**kwargs)
     except Exception as error:
         call.error_type = type(error).__name__
+        call.validation_issues = validation_issues(error)
         raise
     else:
         model = _field(response, "model")

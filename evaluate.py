@@ -20,7 +20,10 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 import chat_bot as bot
 import contact_forms
 import api_metrics
-from api_metrics import APICallMetrics, PricingSnapshot, capture_api_metrics, load_pricing, summarize_calls
+from api_metrics import (
+    APICallMetrics, PricingSnapshot, ValidationIssue, capture_api_metrics,
+    load_pricing, summarize_calls, validation_issues,
+)
 
 ROOT = Path(__file__).resolve().parent
 DATASET_PATH = ROOT / "data" / "evaluations" / "triage_cases.json"
@@ -41,6 +44,15 @@ class _LegacyFAQResponse(StrictModel):
     missing_info: list[str] = Field(default_factory=list)
     relevant_contact_form: contact_forms.ContactFormKey
     suggested_response: str
+
+
+class _RecordedQuestionValidation(StrictModel):
+    """Preserve saved flags, including historical contradictions and empty replies."""
+
+    is_valid_question: bool
+    suggested_response: str
+    standalone_question: str = ""
+    needs_clarification: bool = False
 
 
 class HistoryMessage(StrictModel):
@@ -110,12 +122,13 @@ class CaseResult(StrictModel):
     case_id: str
     inferred_action: ObservedAction
     answer: str = ""
-    validation: bot.QuestionValidation | None = None
+    validation: _RecordedQuestionValidation | None = None
     structured_answer: bot.FAQResponse | _LegacyFAQResponse | None = None
     latency_ms: float = 0
     api_calls: list[APICallMetrics] | None = None
     error_type: str | None = None
     error_status: int | None = None
+    validation_issues: list[ValidationIssue] = Field(default_factory=list)
     review: HumanReview = Field(default_factory=HumanReview)
 
 
@@ -163,7 +176,7 @@ def run_case(
                 case_id=case.id,
                 inferred_action=infer_action(validation, answer),
                 answer=text,
-                validation=validation,
+                validation=validation.model_dump(),
                 structured_answer=answer,
                 latency_ms=round((perf_counter() - start) * 1000, 1),
                 api_calls=calls,
@@ -175,6 +188,7 @@ def run_case(
                 inferred_action="error",
                 error_type=type(error).__name__,
                 error_status=getattr(error, "status_code", None),
+                validation_issues=validation_issues(error),
                 latency_ms=round((perf_counter() - start) * 1000, 1),
                 api_calls=calls,
             )
@@ -366,6 +380,10 @@ def render_report(dataset: EvaluationDataset, cases: list[EvaluationCase], paylo
                         f"{format_value(call.output_tokens)} | {format_value(call.estimated_cost_eur, 8)} | "
                         f"{call.error_type or 'response received'} |"
                     )
+                for call in result.api_calls:
+                    if call.validation_issues:
+                        issues = [issue.model_dump() for issue in call.validation_issues]
+                        lines.append(f"\nValidation diagnostics ({call.stage}): `{issues}`.")
         if case.history:
             lines.append("\nProvided context:")
             lines.extend(f"- {message.role}: {message.content}" for message in case.history)
@@ -374,7 +392,14 @@ def render_report(dataset: EvaluationDataset, cases: list[EvaluationCase], paylo
             lines.append(f"Expected FAQ groups (one alternative per group): `{case.expected_source_groups}`.")
         if result.error_type:
             lines.append(f"\nRuntime error: `{result.error_type}`; HTTP status: `{result.error_status}`.")
+            if result.validation_issues:
+                issues = [issue.model_dump() for issue in result.validation_issues]
+                lines.append(f"Validation diagnostics (final failure): `{issues}`.")
         if result.validation:
+            lines.append(
+                f"\nValidation flags: is_valid_question=`{result.validation.is_valid_question}`; "
+                f"needs_clarification=`{result.validation.needs_clarification}`."
+            )
             lines.append(f"\nStandalone question: {result.validation.standalone_question}")
         if result.structured_answer:
             answer = result.structured_answer
@@ -428,6 +453,8 @@ def run_metadata(
         "reporting_currency": "EUR",
         "usage_tracking_version": 2,
         "triage_decision_version": 2,
+        "validation_contract_version": 4,
+        "max_structured_repair_attempts": 1,
         "git_revision": revision,
         "label_status": dataset.label_status,
         "timeout_seconds": 30,

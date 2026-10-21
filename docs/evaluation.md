@@ -190,9 +190,50 @@ rewritten, and its usage cannot be reconstructed from its answer text.
 | Answer citation ID validity | Answer-branch outputs with at least one citation and all cited IDs present in the corpus. |
 
 New runs use `FAQResponse.action`: `answer`, `clarify` or `escalate`. The validation
-stage still handles invalid requests (`reject`) and unresolved references
+stage still handles invalid requests (`reject`) and missing necessary user details
 (`clarify`) before retrieval. A valid request with no answer is `unresolved`;
 exceptions, including inconsistent generated triage fields, are `error`.
+Validation distinguishes scope from specificity: missing intent, symptoms or an unresolved reference
+must have `is_valid_question=true`, `needs_clarification=true`, and a nonblank
+clarification reply. Rejection must have `is_valid_question=false`,
+`needs_clarification=false`, and a nonblank refusal. The prompt requests an empty
+standalone question for early returns, but a nonempty unused value no longer
+blocks a valid clarification/refusal: neither can trigger retrieval. A request proceeding to retrieval needs a
+nonblank standalone question. Contradictory flags and blank early-return replies
+fail validation rather than silently becoming rejection or an empty chat bubble.
+Vague problems are not rewritten as a guessed editing, deletion or refund task.
+A known topic or contact category alone is not evidence that human support is
+needed. Broad informational questions can still retrieve FAQs; explicit requests
+for human intervention do not ask for details needed only by the support team.
+Explicit human-intervention intent in the original message takes priority over
+generic FAQ troubleshooting or omissions in the rewritten search query. Decision
+fields lead both response schemas so dependent fields are generated after them.
+
+There is no automatic relabelling. Each structured stage permits one additional
+model attempt after a Pydantic parsing/contract error. It reuses the original
+question, history and evidence with corrective instructions containing only safe
+rule codes and field names, never the failed output or exception text. It does
+not retry API/network errors, missing parsed responses or citation-check failures.
+After a second invalid output, the case remains an error. Syntactically valid but
+semantically wrong decisions are not retried or silently changed.
+
+New run metadata records `validation_contract_version=4` and
+`max_structured_repair_attempts=1`. API calls use separate `validation_repair` and
+`answer_generation_repair` stages, so both attempts contribute to elapsed latency
+and usage/cost tracking. When SDK parsing raises before exposing usage, that
+attempt's usage and full run cost remain N/A; the known subtotal includes any
+successful repair, not an invented estimate for the failed call.
+
+Failed calls and final failed cases include `validation_issues` with allowlisted
+rule codes (for example `clarification_rejected` or `non_escalation_destination`)
+and sanitized field paths. Input values, messages, contexts, arbitrary property
+names and raw model outputs are excluded. Streamlit logs these safe diagnostics
+instead of the raw Pydantic traceback on validation failures. Recovered cases retain the first
+attempt's diagnostics in `api_calls`. Case details display these diagnostics and
+both validation flags; historical reports cannot gain diagnostics that were
+never captured.
+The evaluator stores validation snapshots separately from the stricter live
+model, so older contradictory flags and their original scores remain readable.
 Confidence no longer selects the action. A high-confidence, FAQ-supported referral
 is an escalation and receives the official form link.
 
@@ -213,7 +254,7 @@ pre-action version, since old in-memory chat details are not migrated.
 Use a fresh output name for a new live run, for example:
 
 ```bash
-.venv/bin/python evaluate.py --split development --output reports/development-triage-02
+.venv/bin/python evaluate.py --split development --output reports/development-triage-05
 ```
 
 Review the response text as well as the decision. The decision/schema tests and

@@ -91,6 +91,29 @@ class DatasetTest(unittest.TestCase):
 
 
 class EvaluationTest(unittest.TestCase):
+    def test_historical_validation_flags_remain_readable_without_rescoring(self) -> None:
+        dataset = load_dataset()
+        sample = case("case-11", "clarify")
+        old_flags = {
+            "is_valid_question": False, "needs_clarification": True,
+            "suggested_response": "", "standalone_question": "",
+        }
+        payload = {
+            "metadata": {"started_at_utc": "old-run", "split": "development", "generation_model": "test-model"},
+            "results": [{"case_id": sample.id, "inferred_action": "reject", "answer": "", "validation": old_flags}],
+        }
+        with self.assertRaises(ValidationError):
+            QuestionValidation.model_validate(old_flags)
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "historical-validation"
+            write_reports(output, dataset, [sample], payload)
+            restored = json.loads(output.with_suffix(".json").read_text())
+            markdown = output.with_suffix(".md").read_text()
+        self.assertEqual(restored["results"][0]["validation"], old_flags)
+        self.assertEqual(restored["results"][0]["inferred_action"], "reject")
+        self.assertEqual(restored["metrics"]["action_accuracy"]["passed"], 0)
+        self.assertIn("is_valid_question=`False`; needs_clarification=`True`", markdown)
+
     def test_historical_results_keep_saved_actions_and_do_not_gain_new_fields(self) -> None:
         dataset = load_dataset()
         samples = [case("legacy-low", "escalate", expected_contact_form="outros"),
@@ -148,7 +171,7 @@ class EvaluationTest(unittest.TestCase):
             missing_knowledge=["Cannot investigate server logs."],
         )
         result = run_case(sample, Mock(), answer_fn=Mock(return_value=(answer.suggested_response, answer,
-                          QuestionValidation(is_valid_question=True, suggested_response=""))))
+                          QuestionValidation(is_valid_question=True, suggested_response="", standalone_question=sample.question))))
         payload = {
             "metadata": {"started_at_utc": "new-run", "split": "development",
                          "generation_model": "test-model", "triage_decision_version": 2},
@@ -165,7 +188,7 @@ class EvaluationTest(unittest.TestCase):
         self.assertIn("Missing knowledge or capabilities", markdown)
 
     def test_explicit_action_is_independent_of_confidence_and_knowledge_gaps(self) -> None:
-        valid = QuestionValidation(is_valid_question=True, suggested_response="")
+        valid = QuestionValidation(is_valid_question=True, suggested_response="", standalone_question="Example request")
         for confidence in ("low", "medium", "high"):
             answer = faq_answer(
                 action="escalate", confidence_score=confidence,
@@ -177,12 +200,17 @@ class EvaluationTest(unittest.TestCase):
         self.assertEqual(infer_action(valid, clarify), "clarify")
         self.assertEqual(infer_action(valid, faq_answer(confidence_score="low")), "answer")
         self.assertEqual(infer_action(valid, None), "unresolved")
-        self.assertEqual(infer_action(valid.model_copy(update={"needs_clarification": True}), None), "clarify")
-        self.assertEqual(infer_action(valid.model_copy(update={"is_valid_question": False}), None), "reject")
+        clarification = QuestionValidation(
+            is_valid_question=True, needs_clarification=True,
+            suggested_response="A que opção se refere?",
+        )
+        rejection = QuestionValidation(is_valid_question=False, suggested_response="Só respondo sobre o website.")
+        self.assertEqual(infer_action(clarification, None), "clarify")
+        self.assertEqual(infer_action(rejection, None), "reject")
 
     def test_run_case_does_not_send_gold_labels_to_the_chatbot(self) -> None:
         sample = case(history=[{"role": "user", "content": "Earlier request"}])
-        validation = QuestionValidation(is_valid_question=True, suggested_response="")
+        validation = QuestionValidation(is_valid_question=True, suggested_response="", standalone_question=sample.question)
         answer_fn = Mock(return_value=("Example response", faq_answer(), validation))
         client = Mock()
         result = run_case(sample, client, answer_fn=answer_fn)

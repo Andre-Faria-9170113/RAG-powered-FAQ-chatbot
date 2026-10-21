@@ -16,6 +16,7 @@ from pydantic import ValidationError
 import chat_bot as bot
 from api_metrics import (
     EuroExchangeRate, PricingSnapshot, api_call, api_stage, capture_api_metrics, load_pricing, summarize_calls,
+    validation_issues,
 )
 from evaluate import (
     DATASET_PATH, CaseResult, EvaluationCase, file_hash, load_dataset, main,
@@ -130,6 +131,23 @@ class UsageCaptureTest(unittest.TestCase):
         self.assertIs(api_call("validation", operation, model="example"), operation.return_value)
         self.assertEqual(len(calls), 1)
 
+    def test_validation_diagnostics_exclude_values_messages_and_unknown_field_names(self):
+        secret = "private-value-must-not-be-recorded"
+        try:
+            bot.FAQResponse.model_validate({
+                "action": "answer", "confidence_score": "high", "suggested_response": secret,
+                "relevant_contact_form": secret, secret: secret,
+            })
+        except ValidationError as error:
+            issues = validation_issues(error)
+            with capture_api_metrics(self.pricing) as calls:
+                with self.assertRaises(ValidationError):
+                    api_call("answer_generation", Mock(side_effect=error), model="gpt-4.1-mini")
+        self.assertEqual({issue.code for issue in issues}, {"literal_error", "extra_forbidden"})
+        self.assertEqual({issue.field for issue in issues}, {"relevant_contact_form", "unknown_field"})
+        self.assertEqual(calls[0].validation_issues, issues)
+        self.assertNotIn(secret, calls[0].model_dump_json())
+
     def test_nested_captures_and_threads_do_not_share_call_lists(self):
         with capture_api_metrics(self.pricing) as outer:
             self.capture(response())
@@ -184,6 +202,132 @@ def response_body(parsed, usage):
 
 
 class EvaluationUsageTest(unittest.TestCase):
+    @patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"})
+    def test_validation_sdk_early_returns_and_invalid_states_never_retrieve(self):
+        scenarios = [
+            ("clarify", {"is_valid_question": True, "needs_clarification": True,
+                         "suggested_response": "A que opção se refere?", "standalone_question": ""}),
+            ("reject", {"is_valid_question": False, "needs_clarification": False,
+                        "suggested_response": "Só posso ajudar com questões sobre o website.", "standalone_question": ""}),
+            ("error", {"is_valid_question": False, "needs_clarification": True,
+                       "suggested_response": "", "standalone_question": ""}),
+            ("error", {"is_valid_question": False, "needs_clarification": False,
+                       "suggested_response": " ", "standalone_question": ""}),
+        ]
+        sample = EvaluationCase(
+            id="ambiguous", split="development", category="indeterminado",
+            question="E aquela opção, como funciona?", expected_action="clarify",
+            rubric="Ask which option the user means without retrieving.",
+        )
+        for expected, parsed in scenarios:
+            with self.subTest(expected=expected, parsed=parsed):
+                requests = []
+
+                def respond(request):
+                    requests.append(request)
+                    return httpx.Response(200, json=response_body(parsed, response().usage.model_dump()))
+
+                with (
+                    OpenAI(api_key="test-key", max_retries=0, http_client=httpx.Client(transport=httpx.MockTransport(respond))) as client,
+                    patch("chat_bot.ensure_vector_store") as index,
+                    patch("chat_bot.retrieve_faqs") as retrieve,
+                    patch("chat_bot.generate_faq_answer") as generate,
+                ):
+                    result = run_case(sample, client)
+                self.assertEqual(result.inferred_action, expected)
+                self.assertEqual(len(requests), 2 if expected == "error" else 1)
+                stages = ["validation", "validation_repair"] if expected == "error" else ["validation"]
+                self.assertEqual([call.stage for call in result.api_calls], stages)
+                if expected == "error":
+                    self.assertEqual(result.error_type, "ValidationError")
+                    code = "clarification_rejected" if parsed["needs_clarification"] else "early_reply_missing"
+                    self.assertEqual(result.validation_issues[0].code, code)
+                    self.assertTrue(all(call.validation_issues[0].code == code for call in result.api_calls))
+                else:
+                    self.assertEqual(result.answer, parsed["suggested_response"])
+                    self.assertTrue(result.answer.strip())
+                    self.assertIsNotNone(result.validation)
+                    self.assertIsNone(result.structured_answer)
+                index.assert_not_called()
+                retrieve.assert_not_called()
+                generate.assert_not_called()
+
+    @patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"})
+    def test_sdk_repairs_ambiguous_reference_once_without_promoting_output_to_instructions(self):
+        requests = []
+        original = "E aquela opção, como funciona? private-user-context"
+        invalid = {"is_valid_question": False, "needs_clarification": True,
+                   "suggested_response": "private-model-output", "standalone_question": ""}
+        corrected = {"is_valid_question": True, "needs_clarification": True,
+                     "suggested_response": "A que opção se refere?", "standalone_question": ""}
+
+        def respond(request):
+            body = json.loads(request.content)
+            requests.append(body)
+            parsed = invalid if len(requests) == 1 else corrected
+            return httpx.Response(200, json=response_body(parsed, response().usage.model_dump()))
+
+        sample = EvaluationCase(id="case-11", split="development", category="indeterminado",
+                                question=original, expected_action="clarify", rubric="Ask which option.")
+        with (
+            OpenAI(api_key="test-key", max_retries=0, http_client=httpx.Client(transport=httpx.MockTransport(respond))) as client,
+            patch("chat_bot.ensure_vector_store") as index,
+        ):
+            result = run_case(sample, client)
+        self.assertEqual(result.inferred_action, "clarify")
+        self.assertEqual(result.answer, corrected["suggested_response"])
+        self.assertEqual([call.stage for call in result.api_calls], ["validation", "validation_repair"])
+        self.assertEqual(result.api_calls[0].validation_issues[0].code, "clarification_rejected")
+        self.assertIsNone(result.api_calls[1].error_type)
+        self.assertEqual(requests[0]["input"], requests[1]["input"])
+        self.assertIn("clarification_rejected", requests[1]["instructions"])
+        self.assertNotIn("private-user-context", requests[1]["instructions"])
+        self.assertNotIn("private-model-output", requests[1]["instructions"])
+        self.assertIn(original, requests[1]["input"][-1]["content"])
+        self.assertIsNone(summarize_calls(result.api_calls)["estimated_cost_eur"])
+        self.assertIsNotNone(summarize_calls(result.api_calls)["known_cost_eur_subtotal"])
+        payload = {"metadata": run_metadata(load_dataset(), DATASET_PATH, "development"), "results": [result.model_dump()]}
+        self.assertIn("Validation diagnostics (validation)", render_report(load_dataset(), [sample], payload))
+        index.assert_not_called()
+
+    @patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"})
+    def test_sdk_repairs_only_generation_for_contact_and_suggestion_requests(self):
+        scenarios = [
+            ("case-19", "contactos_anuncios", "escalate", ["private-delivery-details"], "escalation_user_info"),
+            ("case-31", "sugestoes", "answer", [], "non_escalation_destination"),
+        ]
+        dataset = load_dataset()
+        for case_id, route, action, missing, rule in scenarios:
+            with self.subTest(case_id=case_id):
+                sample = next(case for case in dataset.cases if case.id == case_id)
+                requests = []
+                invalid = {"action": action, "confidence_score": "high", "suggested_response": "private-model-output",
+                           "relevant_contact_form": route, "missing_info": missing, "missing_knowledge": [], "sources": [], "topics": []}
+                corrected = invalid | {"action": "escalate", "missing_info": [], "suggested_response": "Contacte a equipa."}
+                parsed = [{"is_valid_question": True, "needs_clarification": False, "suggested_response": "", "standalone_question": sample.question}, invalid, corrected]
+
+                def respond(request):
+                    requests.append(json.loads(request.content))
+                    return httpx.Response(200, json=response_body(parsed[len(requests) - 1], response().usage.model_dump()))
+
+                with (
+                    OpenAI(api_key="test-key", max_retries=0, http_client=httpx.Client(transport=httpx.MockTransport(respond))) as client,
+                    patch("chat_bot.ensure_vector_store") as index,
+                    patch("chat_bot.retrieve_faqs", return_value=[]) as retrieve,
+                ):
+                    result = run_case(sample, client)
+                self.assertEqual(result.inferred_action, "escalate")
+                self.assertEqual(result.structured_answer.relevant_contact_form, route)
+                self.assertIn(bot.CONTACT_FORMS[route], result.answer)
+                self.assertEqual([call.stage for call in result.api_calls], ["validation", "answer_generation", "answer_generation_repair"])
+                self.assertEqual(result.api_calls[1].validation_issues[0].code, rule)
+                self.assertEqual(requests[1]["input"], requests[2]["input"])
+                self.assertIn(rule, requests[2]["instructions"])
+                self.assertNotIn("private-model-output", requests[2]["instructions"])
+                self.assertNotIn("private-delivery-details", requests[2]["instructions"])
+                self.assertEqual(index.call_count, 1)
+                self.assertEqual(retrieve.call_count, 1)
+
     @patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"})
     def test_real_sdk_pipeline_measures_cold_and_warm_index_without_network(self):
         requests = []
@@ -240,10 +384,14 @@ class EvaluationUsageTest(unittest.TestCase):
         for request in requests:
             if "instructions" in request and "Validas mensagens" not in request["instructions"]:
                 schema = request["text"]["format"]["schema"]
+                self.assertEqual(list(schema["properties"])[:2], ["action", "relevant_contact_form"])
                 self.assertIn("action", schema["required"])
                 self.assertIn("missing_knowledge", schema["required"])
                 self.assertEqual(set(schema["properties"]["action"]["enum"]), {"answer", "clarify", "escalate"})
                 self.assertFalse(schema["additionalProperties"])
+            elif "instructions" in request:
+                schema = request["text"]["format"]["schema"]
+                self.assertEqual(list(schema["properties"])[:2], ["is_valid_question", "needs_clarification"])
         payload = {"metadata": run_metadata(load_dataset(), DATASET_PATH, "development"), "results": [cold.model_dump()]}
         report = render_report(load_dataset(), [sample], payload)
         self.assertIn("corpus_embedding", report)

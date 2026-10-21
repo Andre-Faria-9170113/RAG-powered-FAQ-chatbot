@@ -21,6 +21,20 @@ from chat_bot import (
 
 
 class TriageContractTest(unittest.TestCase):
+    def test_validation_rejects_contradictory_flags_and_empty_early_replies(self) -> None:
+        invalid = [
+            {"is_valid_question": False, "needs_clarification": True, "suggested_response": "A que opção se refere?"},
+            {"is_valid_question": False, "needs_clarification": True, "suggested_response": ""},
+            {"is_valid_question": False, "suggested_response": ""},
+            {"is_valid_question": False, "suggested_response": " \n "},
+            {"is_valid_question": True, "needs_clarification": True, "suggested_response": ""},
+            {"is_valid_question": True, "needs_clarification": True, "suggested_response": " \n "},
+            {"is_valid_question": True, "suggested_response": "", "standalone_question": " "},
+        ]
+        for payload in invalid:
+            with self.subTest(payload=payload), self.assertRaises(ValidationError):
+                QuestionValidation.model_validate(payload)
+
     def test_action_is_required_and_inconsistent_triage_is_rejected(self) -> None:
         base = {
             "confidence_score": "high", "relevant_contact_form": "none",
@@ -219,6 +233,7 @@ class ConversationTest(unittest.TestCase):
                         is_valid_question=valid,
                         needs_clarification=clarify,
                         suggested_response="Qual é o tópico?",
+                        standalone_question="Unused question that must not trigger retrieval",
                     )
                 )
                 with (
@@ -230,6 +245,35 @@ class ConversationTest(unittest.TestCase):
                 self.assertIsNone(answer)
                 index.assert_not_called()
                 retrieve.assert_not_called()
+
+    def test_validation_prompt_separates_unresolved_references_from_rejection(self) -> None:
+        clarification = QuestionValidation(
+            is_valid_question=True, needs_clarification=True,
+            suggested_response="A que opção se refere?",
+        )
+        client = Mock()
+        client.responses.parse.return_value = SimpleNamespace(output_parsed=clarification)
+        result = validate_question(client, "E aquela opção, como funciona?")
+        self.assertEqual(result, clarification)
+        instructions = client.responses.parse.call_args.kwargs["instructions"]
+        self.assertIn("is_valid_question=true, needs_clarification=true", instructions)
+        self.assertIn("Nunca combines is_valid_question=false com needs_clarification=true", instructions)
+        self.assertIn("recusa breve e educada", instructions)
+        self.assertIn("não deixes o utilizador sem resposta", instructions)
+        self.assertIn("Se faltarem a intenção ou os sintomas", instructions)
+        self.assertIn("transformes um problema vago numa intenção concreta", instructions)
+        self.assertIn("não basta para presumir a operação", instructions)
+
+    def test_api_failures_and_missing_parsed_responses_are_not_repaired(self) -> None:
+        for failure in (RuntimeError("API failure"), SimpleNamespace(output_parsed=None)):
+            client = Mock()
+            if isinstance(failure, Exception):
+                client.responses.parse.side_effect = failure
+            else:
+                client.responses.parse.return_value = failure
+            with self.subTest(failure=failure), self.assertRaises(RuntimeError):
+                validate_question(client, "Pergunta")
+            self.assertEqual(client.responses.parse.call_count, 1)
 
     def test_summary_reaches_validation_and_generation_without_truncation(self) -> None:
         history = [

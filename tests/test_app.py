@@ -98,6 +98,53 @@ print("Fresh bootstrap verified")
         self.assertEqual(len(app.pills), 1)
         self.refresh.assert_called_once()
 
+    @patch.dict("os.environ", {"OPENAI_API_KEY": "test-key"})
+    def test_clarification_and_rejection_replies_render_and_keep_chat_available(self) -> None:
+        validations = [
+            QuestionValidation(is_valid_question=True, needs_clarification=True,
+                               suggested_response="A que opção se refere?"),
+            QuestionValidation(is_valid_question=False,
+                               suggested_response="Só posso ajudar com questões sobre o website."),
+        ]
+        with (
+            patch("openai.OpenAI", return_value=Mock()),
+            patch("chat_bot.validate_question", side_effect=validations),
+            patch("chat_bot.ensure_vector_store") as index,
+            patch("chat_bot.compact_history_if_needed", side_effect=lambda _client, history: history),
+        ):
+            app = AppTest.from_file(str(APP_PATH), default_timeout=10).run()
+            for question, validation in zip(
+                ("E aquela opção, como funciona?", "Escreve uma receita de bolo."), validations,
+            ):
+                app.chat_input[0].set_value(question).run()
+                self.assertFalse(app.exception)
+                self.assertFalse(app.error)
+                self.assertEqual(app.session_state["messages"][-1]["content"], validation.suggested_response)
+                self.assertEqual(len(app.chat_input), 1)
+                self.assertNotIn("details", app.session_state["messages"][-1])
+            index.assert_not_called()
+
+    def test_validation_failure_logs_only_safe_diagnostics_and_keeps_chat_available(self) -> None:
+        secret = "private-output-must-not-be-logged"
+        try:
+            QuestionValidation(is_valid_question=False, needs_clarification=True, suggested_response=secret)
+        except Exception as error:
+            failure = error
+        with (
+            patch("openai.OpenAI", return_value=Mock()),
+            patch("chat_bot.answer_user_question", side_effect=failure),
+        ):
+            app = AppTest.from_file(str(APP_PATH), default_timeout=10).run()
+            with self.assertLogs("__main__", level="ERROR") as logged:
+                app.chat_input[0].set_value("Uma pergunta").run()
+        self.assertFalse(app.exception)
+        self.assertEqual(len(app.error), 1)
+        self.assertIn("clarification_rejected", "\n".join(logged.output))
+        self.assertNotIn(secret, "\n".join(logged.output))
+        self.assertNotIn(secret, app.error[0].value)
+        self.assertEqual(len(app.chat_input), 1)
+        self.assertTrue(app.session_state["messages"][-1]["error"])
+
     def test_answer_details_link_each_official_contact_form(self) -> None:
         app = AppTest.from_file(str(APP_PATH), default_timeout=10).run()
         for destination, url in CONTACT_FORMS.items():
@@ -141,7 +188,7 @@ print("Fresh bootstrap verified")
             missing_knowledge=["Não posso submeter sugestões pela equipa."],
             suggested_response="Envie a sugestão à equipa.",
         )
-        validation = QuestionValidation(is_valid_question=True, suggested_response="")
+        validation = QuestionValidation(is_valid_question=True, suggested_response="", standalone_question="Onde envio uma sugestão?")
         with (
             patch("openai.OpenAI", return_value=Mock()),
             patch("chat_bot.answer_user_question", return_value=(answer.suggested_response, answer, validation)),

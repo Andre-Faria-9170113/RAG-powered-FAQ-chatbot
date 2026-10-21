@@ -7,7 +7,9 @@ import logging
 import httpx
 import streamlit as st
 from openai import OpenAI
+from pydantic import ValidationError
 
+from api_metrics import validation_issues
 from contact_forms import CONTACT_FORMS, CONTACT_LABELS, reload_contact_forms
 from refresh_website_data import refresh as refresh_website_data
 from chat_bot import (
@@ -138,8 +140,11 @@ def answer_prompt(prompt: str) -> None:
                     st.session_state.context_history,
                     client=cached_client(),
                 )
-            except Exception:
-                LOGGER.exception("Could not answer the current turn")
+            except Exception as error:
+                if isinstance(error, ValidationError):
+                    LOGGER.error("Could not answer the current turn: %s", validation_issues(error))
+                else:
+                    LOGGER.exception("Could not answer the current turn")
                 answer = (
                     "Não consegui processar o pedido neste momento. "
                     "Por favor, tente novamente."
