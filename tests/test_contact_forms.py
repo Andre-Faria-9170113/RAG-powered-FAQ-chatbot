@@ -62,13 +62,14 @@ class ContactCatalogTest(unittest.TestCase):
         for key, url in CONTACT_FORMS.items():
             with self.subTest(key=key):
                 answer = FAQResponse(
+                    action="escalate",
                     confidence_score="low", relevant_contact_form=key,
                     suggested_response="Contacte a equipa.",
                 )
                 self.assertIn(f"[{CONTACT_LABELS[key]}]({url})", append_contact_link(answer))
-                for update in ({"missing_info": ["Qual o erro?"]}, {"confidence_score": "high"}):
-                    self.assertEqual(append_contact_link(answer.model_copy(update=update)), answer.suggested_response)
-        answer = FAQResponse(confidence_score="low", relevant_contact_form="none", suggested_response="Qual o tópico?")
+                for confidence in ("medium", "high"):
+                    self.assertIn(url, append_contact_link(answer.model_copy(update={"confidence_score": confidence})))
+        answer = FAQResponse(action="clarify", missing_info=["Qual o tópico?"], confidence_score="low", relevant_contact_form="none", suggested_response="Qual o tópico?")
         self.assertEqual(append_contact_link(answer), answer.suggested_response)
 
     def test_validation_and_generation_receive_the_official_subjects(self) -> None:
@@ -79,6 +80,7 @@ class ContactCatalogTest(unittest.TestCase):
         validate_question(client, "Pedido de imprensa")
         validation_prompt = client.responses.parse.call_args.kwargs["instructions"]
         client.responses.parse.return_value = SimpleNamespace(output_parsed=FAQResponse(
+            action="escalate",
             confidence_score="low", relevant_contact_form="imprensa_publicidade",
             suggested_response="Contacte a equipa.",
         ))
@@ -89,6 +91,12 @@ class ContactCatalogTest(unittest.TestCase):
             self.assertIn(form.label, generation_prompt)
             for subject in form.subjects:
                 self.assertIn(subject.label, generation_prompt)
+        self.assertIn("reclamações sobre atendimento", validation_prompt)
+        self.assertIn("needs_clarification=false", validation_prompt)
+        self.assertIn("verificações já tentadas", validation_prompt)
+        self.assertIn("não transforma esse pedido em answer", generation_prompt)
+        self.assertIn("missing_knowledge, nunca em missing_info", generation_prompt)
+        self.assertIn("Não repitas verificações que já foram feitas", generation_prompt)
 
     def test_reloaded_catalog_updates_existing_mapping_aliases_and_prompts(self) -> None:
         original_forms = CONTACT_FORMS
@@ -110,6 +118,7 @@ class ContactCatalogTest(unittest.TestCase):
             validate_question(client, "Question")
             self.assertIn("Updated contact subject", client.responses.parse.call_args.kwargs["instructions"])
             answer = FAQResponse(
+                action="escalate",
                 confidence_score="low", relevant_contact_form=updated[0].key,
                 suggested_response="Contact support.",
             )

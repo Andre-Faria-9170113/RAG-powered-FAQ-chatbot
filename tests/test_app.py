@@ -103,6 +103,7 @@ print("Fresh bootstrap verified")
         for destination, url in CONTACT_FORMS.items():
             with self.subTest(destination=destination):
                 answer = FAQResponse(
+                    action="escalate",
                     confidence_score="low", relevant_contact_form=destination,
                     suggested_response="Contacte a equipa.",
                 )
@@ -120,6 +121,7 @@ print("Fresh bootstrap verified")
 
     def test_answer_details_show_nenhum_without_a_link_when_not_referred(self) -> None:
         answer = FAQResponse(
+            action="answer",
             confidence_score="high", relevant_contact_form="none",
             suggested_response="Resposta da FAQ.",
         )
@@ -132,6 +134,29 @@ print("Fresh bootstrap verified")
         app.run()
         self.assertFalse(app.exception)
         self.assertEqual(app.expander[0].markdown[-1].value, "Encaminhamento: Nenhum")
+
+    def test_details_separate_action_confidence_and_knowledge_limits(self) -> None:
+        answer = FAQResponse(
+            action="escalate", confidence_score="high", relevant_contact_form="sugestoes",
+            missing_knowledge=["Não posso submeter sugestões pela equipa."],
+            suggested_response="Envie a sugestão à equipa.",
+        )
+        validation = QuestionValidation(is_valid_question=True, suggested_response="")
+        with (
+            patch("openai.OpenAI", return_value=Mock()),
+            patch("chat_bot.answer_user_question", return_value=(answer.suggested_response, answer, validation)),
+        ):
+            app = AppTest.from_file(str(APP_PATH), default_timeout=10).run()
+            app.chat_input[0].set_value("Onde envio uma sugestão?").run()
+            app.run()
+        self.assertFalse(app.exception)
+        details = "\n".join(element.value for element in app.expander[0].markdown)
+        self.assertIn("Decisão: Encaminhamento", details)
+        self.assertIn("Confiança: `high`", details)
+        self.assertIn("Limitações de conhecimento ou acesso:", details)
+        self.assertNotIn("Detalhes necessários:", details)
+        self.assertIn(CONTACT_FORMS["sugestoes"], details)
+        self.assertEqual(app.session_state["messages"][-1]["details"]["action"], "escalate")
 
     def test_startup_check_is_shared_across_reruns_resets_and_sessions(self) -> None:
         app = AppTest.from_file(str(APP_PATH), default_timeout=10).run()
@@ -178,6 +203,7 @@ print("Fresh bootstrap verified")
             is_valid_question=True, standalone_question="Pergunta", suggested_response=""
         )
         response = FAQResponse(
+            action="escalate",
             confidence_score="low", relevant_contact_form="outros", suggested_response="Contacte a equipa."
         )
         record = FAQRecord(
@@ -226,6 +252,7 @@ print("Fresh bootstrap verified")
 
     def test_compaction_keeps_full_transcript_and_reset_clears_both_histories(self) -> None:
         response = FAQResponse(
+            action="answer",
             confidence_score="high",
             relevant_contact_form="none",
             suggested_response="Resposta com fontes",

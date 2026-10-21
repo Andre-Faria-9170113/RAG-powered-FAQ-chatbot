@@ -48,9 +48,20 @@ not a claim that the website itself publishes an exhaustive routing algorithm:
 - Feature suggestions have their own destination. `outros` is a fallback, for
   example an unresolved complaint about support rather than a product suggestion.
 
-The existing low-confidence/no-missing-information escalation guard is unchanged.
-The app appends the official label and absolute HTTPS URL; it never submits the
-form. Subject option values are not assumed to be working URL parameters, so
+`FAQResponse.action` explicitly selects `answer`, `clarify` or `escalate`.
+Only `escalate` may select a contact form, and it must select one; the app appends
+the official label and absolute HTTPS URL independently of confidence or FAQ
+citations. A supported recommendation to contact a human is still an escalation.
+Missing FAQ knowledge or unavailable account/server access belongs in
+`missing_knowledge`, not `missing_info`. The latter contains only user details
+necessary to answer or choose a destination, and is required for `clarify`.
+Neither an escalation nor a resolved answer may request those missing details.
+These invariants are checked before a generated response is used. A clear support
+request does not need to repeat troubleshooting or provide everything the human
+team might later need before it can receive the right contact link.
+
+The app never submits the form. Subject option values are not assumed to be
+working URL parameters, so
 links select only the verified section, not an invented preselected subject.
 
 ## Refresh and review

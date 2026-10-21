@@ -182,21 +182,44 @@ rewritten, and its usage cannot be reconstructed from its answer text.
 
 | Metric | Definition |
 |---|---|
-| Action accuracy | Inferred action matches the expected action. |
+| Action accuracy | Observed triage action matches the expected action. |
 | Escalation recall | Required human escalations that actually take the escalation branch. |
 | Correct escalation destination | Required escalations that both escalate and select the expected contact key. |
 | Answers when non-answer expected | Cases labelled clarify/escalate/reject that take the answer branch; lower is better. |
 | Expected source group coverage | Fraction of expected FAQ groups represented among citations, including zero credit when the case errors or has no citations. |
 | Answer citation ID validity | Answer-branch outputs with at least one citation and all cited IDs present in the corpus. |
 
-There is currently no explicit action/category output in the chatbot. The
-adapter mirrors its structured flags: invalid means reject; validation
-clarification or `missing_info` means clarify; low confidence plus a contact key
-means escalate; medium/high confidence means answer. Low confidence without a
-contact or missing-information flag is `unresolved`. Exceptions are `error`.
+New runs use `FAQResponse.action`: `answer`, `clarify` or `escalate`. The validation
+stage still handles invalid requests (`reject`) and unresolved references
+(`clarify`) before retrieval. A valid request with no answer is `unresolved`;
+exceptions, including inconsistent generated triage fields, are `error`.
+Confidence no longer selects the action. A high-confidence, FAQ-supported referral
+is an escalation and receives the official form link.
 
-This inference can disagree with the wording of a generated response. Review
-the text as well as the flags. Category accuracy is **N/A**, because free-text
+`missing_info` means a detail the user must provide to answer or choose a channel;
+it is required for answer-stage clarification and empty for other actions.
+`missing_knowledge` records unresolved FAQ/capability limitations, not a reason to
+ask the user for unavailable policy or backend information. Only escalations may
+select a contact key, and they must select one. Answer generation receives the
+original request as well as the rewritten search question to retain attempted
+troubleshooting and requests for human intervention.
+
+New metadata includes `triage_decision_version=2`. Saved reports without that
+marker retain their recorded inferred actions and legacy `missing_info` meaning;
+regeneration does not invent explicit decisions or improve historical scores.
+The historical schema is private to the evaluator; the chatbot and Streamlit
+use only the current `FAQResponse`. Restart Streamlit when upgrading from a
+pre-action version, since old in-memory chat details are not migrated.
+Use a fresh output name for a new live run, for example:
+
+```bash
+.venv/bin/python evaluate.py --split development --output reports/development-triage-02
+```
+
+Review the response text as well as the decision. The decision/schema tests and
+mocked SDK tests establish application behavior, not live model accuracy; a fresh
+paid development run is still needed to measure the prompt changes. Labels and
+the holdout split are unchanged. Category accuracy remains **N/A**, because free-text
 `topics` and referral destinations are not a dedicated category prediction.
 
 Errors count against action accuracy and any required escalation. Metrics with

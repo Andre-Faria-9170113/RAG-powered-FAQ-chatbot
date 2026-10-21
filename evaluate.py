@@ -32,6 +32,17 @@ class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class _LegacyFAQResponse(StrictModel):
+    """Read pre-action reports without inventing decisions or enforcing new rules."""
+
+    sources: list[bot.AnswerSource] = Field(default_factory=list)
+    topics: list[str] = Field(default_factory=list)
+    confidence_score: Literal["low", "medium", "high"]
+    missing_info: list[str] = Field(default_factory=list)
+    relevant_contact_form: contact_forms.ContactFormKey
+    suggested_response: str
+
+
 class HistoryMessage(StrictModel):
     role: Literal["user", "assistant"]
     content: str = Field(min_length=1)
@@ -100,7 +111,7 @@ class CaseResult(StrictModel):
     inferred_action: ObservedAction
     answer: str = ""
     validation: bot.QuestionValidation | None = None
-    structured_answer: bot.FAQResponse | None = None
+    structured_answer: bot.FAQResponse | _LegacyFAQResponse | None = None
     latency_ms: float = 0
     api_calls: list[APICallMetrics] | None = None
     error_type: str | None = None
@@ -126,18 +137,14 @@ def load_dataset(path: Path = DATASET_PATH) -> EvaluationDataset:
 def infer_action(
     validation: bot.QuestionValidation, answer: bot.FAQResponse | None
 ) -> ObservedAction:
-    """Mirror current response flags; this is not a semantic judgment of the text."""
+    """Use the production triage decision, not a semantic judgment of the text."""
     if not validation.is_valid_question:
         return "reject"
     if validation.needs_clarification:
         return "clarify"
     if answer is None:
         return "unresolved"
-    if answer.missing_info:
-        return "clarify"
-    if answer.confidence_score == "low":
-        return "escalate" if answer.relevant_contact_form != "none" else "unresolved"
-    return "answer"
+    return answer.action
 
 
 def run_case(
@@ -265,7 +272,11 @@ def render_report(dataset: EvaluationDataset, cases: list[EvaluationCase], paylo
         f"Model: `{payload['metadata']['generation_model']}`. Label status: **{dataset.label_status}**.",
         f"Completed: {len(results)}/{len(cases)} cases. Runtime errors: {metrics['errors']}.", "",
         "Labels are assistant-authored drafts until reviewed by the project owner.",
-        "Actions are inferred from existing structured flags, not from a dedicated action field.",
+        (
+            "Actions use the explicit triage decision; validation handles rejected or ambiguous requests."
+            if payload["metadata"].get("triage_decision_version") == 2
+            else "Historical actions retain their saved inference from structured flags; they have not been rescored using explicit decisions."
+        ),
         "Category accuracy is N/A: the chatbot has no dedicated category output yet.", "",
         "| Automatic check | Result |", "|---|---|",
     ]
@@ -368,7 +379,12 @@ def render_report(dataset: EvaluationDataset, cases: list[EvaluationCase], paylo
         if result.structured_answer:
             answer = result.structured_answer
             lines.append(f"\nActual contact: `{answer.relevant_contact_form}`; confidence: `{answer.confidence_score}`.")
-            lines.append(f"Missing information: `{answer.missing_info}`.")
+            if isinstance(answer, bot.FAQResponse):
+                lines.append(f"Explicit action: `{answer.action}`.")
+                lines.append(f"Missing user information: `{answer.missing_info}`.")
+                lines.append(f"Missing knowledge or capabilities: `{answer.missing_knowledge}`.")
+            else:
+                lines.append(f"Missing information (legacy meaning): `{answer.missing_info}`.")
         lines.extend(["", "Response:", "", result.answer or "(No response)", ""])
         if result.structured_answer:
             for source in result.structured_answer.sources:
@@ -411,6 +427,7 @@ def run_metadata(
         "pricing_snapshot": (pricing if pricing is not None else load_pricing()).model_dump(mode="json"),
         "reporting_currency": "EUR",
         "usage_tracking_version": 2,
+        "triage_decision_version": 2,
         "git_revision": revision,
         "label_status": dataset.label_status,
         "timeout_seconds": 30,

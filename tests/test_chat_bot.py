@@ -4,17 +4,60 @@ from copy import deepcopy
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
+from pydantic import ValidationError
+
 from chat_bot import (
     AnswerSource,
     FAQResponse,
     QuestionValidation,
     answer_user_question,
+    append_contact_link,
     compact_history_if_needed,
     generate_faq_answer,
     lexical_search,
     load_faq_records,
     validate_question,
 )
+
+
+class TriageContractTest(unittest.TestCase):
+    def test_action_is_required_and_inconsistent_triage_is_rejected(self) -> None:
+        base = {
+            "confidence_score": "high", "relevant_contact_form": "none",
+            "suggested_response": "Resposta.",
+        }
+        invalid = [
+            {},
+            {"action": "escalate"},
+            {"action": "escalate", "relevant_contact_form": "outros", "missing_info": ["Qual o erro?"]},
+            {"action": "answer", "relevant_contact_form": "outros"},
+            {"action": "answer", "missing_info": ["Qual o erro?"]},
+            {"action": "answer", "missing_knowledge": ["Acesso à conta"]},
+            {"action": "clarify"},
+            {"action": "clarify", "missing_info": ["Qual o erro?"], "relevant_contact_form": "outros"},
+        ]
+        for update in invalid:
+            with self.subTest(update=update), self.assertRaises(ValidationError):
+                FAQResponse.model_validate(base | update)
+
+    def test_knowledge_gaps_and_faq_supported_referrals_both_produce_links(self) -> None:
+        for confidence, gaps, sources in (
+            ("low", ["Procedimento de revisão manual não documentado"], []),
+            ("high", [], [AnswerSource(chunk_id="faq-059", question="Como obter apoio?")]),
+        ):
+            with self.subTest(confidence=confidence):
+                answer = FAQResponse(
+                    action="escalate", confidence_score=confidence,
+                    relevant_contact_form="problemas_tecnicos", missing_knowledge=gaps,
+                    sources=sources, suggested_response="Contacte a equipa.",
+                )
+                self.assertIn("section=8", append_contact_link(answer))
+        for action, details in (("answer", []), ("clarify", ["Qual o erro?"])):
+            answer = FAQResponse(
+                action=action, confidence_score="low", missing_info=details,
+                relevant_contact_form="none", suggested_response="Resposta ou pergunta.",
+            )
+            self.assertEqual(append_contact_link(answer), answer.suggested_response)
 
 
 class RetrievalTest(unittest.TestCase):
@@ -27,6 +70,39 @@ class RetrievalTest(unittest.TestCase):
 
 
 class ConversationTest(unittest.TestCase):
+    @patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"})
+    def test_generation_keeps_original_troubleshooting_even_if_rewrite_omits_it(self) -> None:
+        question = (
+            "As mensagens para o anunciante não chegam. Confirmámos as contas e "
+            "o spam e testámos app e web. Preciso que a equipa verifique a entrega."
+        )
+        rewritten = "Como resolver mensagens que não chegam ao anunciante?"
+        answer = FAQResponse(
+            action="escalate", confidence_score="high",
+            relevant_contact_form="contactos_anuncios",
+            suggested_response="Contacte a equipa para investigar a entrega.",
+            missing_knowledge=["Sem acesso aos registos de entrega."],
+        )
+        client = Mock()
+        client.responses.parse.side_effect = [
+            SimpleNamespace(output_parsed=QuestionValidation(
+                is_valid_question=True, suggested_response="", standalone_question=rewritten,
+            )),
+            SimpleNamespace(output_parsed=answer),
+        ]
+        with (
+            patch("chat_bot.ensure_vector_store"),
+            patch("chat_bot.retrieve_faqs", return_value=[]) as retrieve,
+        ):
+            text, structured, validation = answer_user_question(question, [], client)
+        self.assertEqual(retrieve.call_args.args[2], rewritten)
+        generation = client.responses.parse.call_args.kwargs
+        self.assertIn(question, generation["input"][-1]["content"])
+        self.assertIn(rewritten, generation["input"][-1]["content"])
+        self.assertIn("section=6", text)
+        self.assertEqual(structured.action, "escalate")
+        self.assertFalse(validation.needs_clarification)
+
     def test_second_message_sends_history_without_ui_metadata(self) -> None:
         history = [
             {"role": "assistant", "content": "Welcome"},
@@ -41,6 +117,7 @@ class ConversationTest(unittest.TestCase):
         client = Mock()
         client.responses.parse.return_value = SimpleNamespace(
             output_parsed=FAQResponse(
+                action="clarify", missing_info=["Which step needs help?"],
                 confidence_score="low",
                 relevant_contact_form="none",
                 suggested_response="Which step do you need help with?",
@@ -67,6 +144,7 @@ class ConversationTest(unittest.TestCase):
         follow_up = "o que tem este feature de novo?"
         resolved = "Que novidades tem o novo chat do CustoJusto?"
         first_answer = FAQResponse(
+            action="answer",
             sources=[
                 AnswerSource(
                     chunk_id="faq-056", question="Que alterações têm este novo chat?"
@@ -180,6 +258,7 @@ class ConversationTest(unittest.TestCase):
         )
         client.responses.parse.return_value = SimpleNamespace(
             output_parsed=FAQResponse(
+                action="clarify", missing_info=["Which aspect needs help?"],
                 confidence_score="low",
                 relevant_contact_form="none",
                 suggested_response="Please clarify",

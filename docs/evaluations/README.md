@@ -62,11 +62,11 @@ review annotations:
 The new-chat follow-up (case-26) and explicit topic change (case-28) match their
 expected answer actions and cite their expected FAQ groups in this run.
 
-The next planned item, explicit structured triage decisions, should distinguish
-the request category, the chosen action, missing user information, and missing
-knowledge. It should also make the application's actual escalation behavior
-consistent with its flags. These are proposed next changes, not part of this
-evaluation implementation.
+The current implementation now has explicit answer/clarify/escalate decisions
+and separates missing user information from missing knowledge/capabilities.
+Escalation links use that decision rather than confidence. Those changes postdate
+this baseline: its saved decisions and scores are unchanged. A dedicated request
+category prediction is still pending.
 
 See [the evaluation guide](../evaluation.md) for commands, metric definitions,
 limitations, and how to enter human judgments without making more API calls.

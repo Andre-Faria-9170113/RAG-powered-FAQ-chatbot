@@ -82,11 +82,15 @@ def render_answer_details(answer: FAQResponse | None) -> None:
         return
 
     with st.expander("Detalhes da resposta", expanded=False):
+        labels = {"answer": "Resposta", "clarify": "Clarificação", "escalate": "Encaminhamento"}
+        st.write(f"Decisão: {labels[answer.action]}")
         st.write(f"Confiança: `{answer.confidence_score}`")
         if answer.topics:
             st.write("Tópicos: " + ", ".join(answer.topics))
         if answer.missing_info:
-            st.write("Informação em falta: " + ", ".join(answer.missing_info))
+            st.write("Detalhes necessários: " + ", ".join(answer.missing_info))
+        if answer.missing_knowledge:
+            st.write("Limitações de conhecimento ou acesso: " + ", ".join(answer.missing_knowledge))
         if answer.sources:
             st.write("FAQs usadas:")
             for source in answer.sources:

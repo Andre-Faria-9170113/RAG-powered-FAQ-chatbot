@@ -19,11 +19,13 @@ from evaluate import (
     render_report,
     run_case,
     summarize,
+    write_reports,
 )
 
 
 def faq_answer(**updates) -> FAQResponse:
     values = {
+        "action": "answer",
         "confidence_score": "high",
         "relevant_contact_form": "none",
         "suggested_response": "Example response",
@@ -89,16 +91,94 @@ class DatasetTest(unittest.TestCase):
 
 
 class EvaluationTest(unittest.TestCase):
-    def test_inference_respects_clarification_before_contact_flag(self) -> None:
-        valid = QuestionValidation(is_valid_question=True, suggested_response="")
+    def test_historical_results_keep_saved_actions_and_do_not_gain_new_fields(self) -> None:
+        dataset = load_dataset()
+        samples = [case("legacy-low", "escalate", expected_contact_form="outros"),
+                   case("legacy-high", "escalate", expected_contact_form="outros")]
+        payload = {
+            "metadata": {"started_at_utc": "old-run", "split": "development", "generation_model": "test-model"},
+            "results": [
+                {
+                    "case_id": sample.id, "inferred_action": action,
+                    "structured_answer": {
+                        "confidence_score": confidence, "relevant_contact_form": "outros",
+                        "missing_info": gaps, "suggested_response": "Contacte a equipa.",
+                    },
+                }
+                for sample, action, confidence, gaps in (
+                    (samples[0], "clarify", "low", ["Procedimento não documentado"]),
+                    (samples[1], "answer", "high", []),
+                )
+            ],
+        }
+        for item in payload["results"]:
+            parsed = CaseResult.model_validate(item)
+            self.assertIsNotNone(parsed.structured_answer)
+            self.assertNotIsInstance(parsed.structured_answer, FAQResponse)
+            with self.assertRaises(ValidationError):
+                FAQResponse.model_validate(item["structured_answer"])
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "historical"
+            write_reports(output, dataset, samples, payload)
+            restored = json.loads(output.with_suffix(".json").read_text())
+            markdown = output.with_suffix(".md").read_text()
+        self.assertEqual(restored["metrics"]["escalation_recall"]["passed"], 0)
+        self.assertEqual(restored["metrics"]["correct_escalation_destination"]["passed"], 0)
+        self.assertEqual([r["inferred_action"] for r in restored["results"]], ["clarify", "answer"])
+        self.assertTrue(all("action" not in r["structured_answer"] for r in restored["results"]))
+        self.assertIn("Historical actions retain their saved inference", markdown)
+        self.assertIn("Missing information (legacy meaning)", markdown)
+
+    def test_invalid_explicit_answers_cannot_fall_back_to_legacy_parsing(self) -> None:
+        invalid = {
+            "case_id": "example", "inferred_action": "escalate",
+            "structured_answer": {
+                "action": "escalate", "confidence_score": "high",
+                "relevant_contact_form": "none", "suggested_response": "Contact support.",
+            },
+        }
+        with self.assertRaises(ValidationError):
+            CaseResult.model_validate(invalid)
+
+    def test_new_reports_show_explicit_action_and_distinct_knowledge_limits(self) -> None:
+        dataset = load_dataset()
+        sample = case(action="escalate", expected_contact_form="problemas_tecnicos")
         answer = faq_answer(
-            confidence_score="low",
-            relevant_contact_form="problemas_anuncios",
-            missing_info=["What is the problem?"],
+            action="escalate", confidence_score="high", relevant_contact_form="problemas_tecnicos",
+            missing_knowledge=["Cannot investigate server logs."],
         )
-        self.assertEqual(infer_action(valid, answer), "clarify")
-        self.assertEqual(infer_action(valid, answer.model_copy(update={"missing_info": []})), "escalate")
-        self.assertEqual(infer_action(valid, faq_answer(confidence_score="low")), "unresolved")
+        result = run_case(sample, Mock(), answer_fn=Mock(return_value=(answer.suggested_response, answer,
+                          QuestionValidation(is_valid_question=True, suggested_response=""))))
+        payload = {
+            "metadata": {"started_at_utc": "new-run", "split": "development",
+                         "generation_model": "test-model", "triage_decision_version": 2},
+            "results": [result.model_dump()],
+        }
+        restored = CaseResult.model_validate(result.model_dump())
+        self.assertIsInstance(restored.structured_answer, FAQResponse)
+        metrics = summarize([sample], [restored])
+        self.assertEqual(metrics["escalation_recall"]["rate"], 1)
+        self.assertEqual(metrics["correct_escalation_destination"]["rate"], 1)
+        markdown = render_report(dataset, [sample], payload)
+        self.assertIn("Actions use the explicit triage decision", markdown)
+        self.assertIn("Explicit action: `escalate`", markdown)
+        self.assertIn("Missing knowledge or capabilities", markdown)
+
+    def test_explicit_action_is_independent_of_confidence_and_knowledge_gaps(self) -> None:
+        valid = QuestionValidation(is_valid_question=True, suggested_response="")
+        for confidence in ("low", "medium", "high"):
+            answer = faq_answer(
+                action="escalate", confidence_score=confidence,
+                relevant_contact_form="problemas_anuncios",
+                missing_knowledge=["Manual account review is unavailable to the assistant."],
+            )
+            self.assertEqual(infer_action(valid, answer), "escalate")
+        clarify = faq_answer(action="clarify", missing_info=["What is the problem?"])
+        self.assertEqual(infer_action(valid, clarify), "clarify")
+        self.assertEqual(infer_action(valid, faq_answer(confidence_score="low")), "answer")
+        self.assertEqual(infer_action(valid, None), "unresolved")
+        self.assertEqual(infer_action(valid.model_copy(update={"needs_clarification": True}), None), "clarify")
+        self.assertEqual(infer_action(valid.model_copy(update={"is_valid_question": False}), None), "reject")
 
     def test_run_case_does_not_send_gold_labels_to_the_chatbot(self) -> None:
         sample = case(history=[{"role": "user", "content": "Earlier request"}])
@@ -127,6 +207,7 @@ class EvaluationTest(unittest.TestCase):
             CaseResult(
                 case_id="escalate", inferred_action="escalate",
                 structured_answer=faq_answer(
+                    action="escalate",
                     confidence_score="low", relevant_contact_form="outros"
                 ),
             ),

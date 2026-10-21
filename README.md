@@ -71,6 +71,14 @@ use that resolved question. A rejected or genuinely ambiguous request returns
 before indexing or embedding. The answer uses retrieved FAQs as evidence;
 conversation history only helps interpret the request.
 
+Answer generation also receives the original message so a search rewrite cannot
+discard troubleshooting already attempted or a request for human intervention.
+Its explicit `action` selects `answer`, `clarify` or `escalate`, independently of
+evidence confidence. `missing_info` contains only necessary user details;
+`missing_knowledge` records unresolved evidence or capability limits. Escalations
+always append the selected official contact-form link, even with high confidence
+or FAQ citations. The app never submits a form or contacts the team itself.
+
 Streamlit keeps two per-session histories:
 
 - `messages`: the full visible transcript, including FAQ details for each answer.
@@ -109,7 +117,7 @@ project owner before being treated as human-approved ground truth.
 
 Live evaluation makes paid API calls and generates JSON/Markdown reports using
 the current chatbot. Holdout is not run by default. Category accuracy is not yet
-measurable; inferred actions, contact routing and source selection are scored.
+measurable; triage decisions, contact routing and source selection are scored.
 Factual support and clarification quality have separate human-review fields.
 New reports also include per-case/stage token usage and latency, mean/p95 case
 latency, and estimated EUR cost using the dated model prices and ECB conversion in

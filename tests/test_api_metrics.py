@@ -202,7 +202,7 @@ class EvaluationUsageTest(unittest.TestCase):
                 parsed = {"is_valid_question": True, "suggested_response": "", "standalone_question": "Example request", "needs_clarification": False}
                 inputs, cached, outputs = 1000, 0, 20
             else:
-                parsed = {"sources": [], "topics": [], "confidence_score": "low", "missing_info": [], "relevant_contact_form": "outros", "suggested_response": "Contact support."}
+                parsed = {"action": "escalate", "sources": [], "topics": [], "confidence_score": "low", "missing_info": [], "missing_knowledge": [], "relevant_contact_form": "outros", "suggested_response": "Contact support."}
                 inputs, cached, outputs = 1400, 1000, 80
             return httpx.Response(200, json=response_body(parsed, {
                 "input_tokens": inputs, "input_tokens_details": {"cached_tokens": cached, "cache_write_tokens": 0},
@@ -237,6 +237,13 @@ class EvaluationUsageTest(unittest.TestCase):
         self.assertAlmostEqual(summarize_calls(warm.api_calls)["estimated_cost_usd"], 0.0008202)
         collection.upsert.assert_called_once()
         self.assertEqual(len(requests), 7)
+        for request in requests:
+            if "instructions" in request and "Validas mensagens" not in request["instructions"]:
+                schema = request["text"]["format"]["schema"]
+                self.assertIn("action", schema["required"])
+                self.assertIn("missing_knowledge", schema["required"])
+                self.assertEqual(set(schema["properties"]["action"]["enum"]), {"answer", "clarify", "escalate"})
+                self.assertFalse(schema["additionalProperties"])
         payload = {"metadata": run_metadata(load_dataset(), DATASET_PATH, "development"), "results": [cold.model_dump()]}
         report = render_report(load_dataset(), [sample], payload)
         self.assertIn("corpus_embedding", report)
