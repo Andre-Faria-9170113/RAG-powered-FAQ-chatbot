@@ -1,0 +1,714 @@
+{
+  "metadata": {
+    "started_at_utc": "2026-10-21T10:12:21.209574+00:00",
+    "split": "development",
+    "generation_model": "gpt-4.1-mini",
+    "embedding_model": "text-embedding-3-small",
+    "top_k": 4,
+    "lexical_top_k": 4,
+    "min_similarity": 0.35,
+    "corpus_version": "2acdf31b366950d18512a4e0bc076356b94204a6bf1bda0475b1c8a0be126ed4",
+    "dataset_sha256": "8865a903379c427017ce1d9ce91abb4999f2f4f19b5ead5bdfda1eca6f19c065",
+    "implementation_sha256": "c1c1bf84403742066ed0a1384b06d211f3f5636168dd8a64be07854799061c36",
+    "evaluator_sha256": "f95fdd40df9bc2a8164fc099aac6d9677291b834a46a3089ea8a9b8055bcea35",
+    "git_revision": "b8e6a883399f4638b3c9ee9d3cb889febae94615",
+    "label_status": "draft_for_human_review",
+    "timeout_seconds": 30,
+    "sdk_max_retries": 0
+  },
+  "results": [
+    {
+      "case_id": "case-01",
+      "inferred_action": "answer",
+      "answer": "No CustoJusto.pt, publicar um anúncio é gratuito e não é necessário pagar qualquer comissão quando vender o seu artigo. Pode inserir os seus anúncios sem custo algum.",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "Tenho a tua questão sobre custos ao publicar anúncios para particulares. Vou procurar informações sobre possíveis taxas ou comissões associadas a anúncios no website.",
+        "standalone_question": "Particular, tenho de pagar para publicar um anúncio ou dar uma comissão quando vender num website de classificados gratuito?",
+        "needs_clarification": false
+      },
+      "structured_answer": {
+        "sources": [
+          {
+            "chunk_id": "faq-002",
+            "question": "Quanto custa publicar um anúncio no CustoJusto.pt?"
+          }
+        ],
+        "topics": [
+          "Publicação de Anúncios",
+          "Custos e Comissões"
+        ],
+        "confidence_score": "high",
+        "missing_info": [],
+        "relevant_contact_form": "none",
+        "suggested_response": "No CustoJusto.pt, publicar um anúncio é gratuito e não é necessário pagar qualquer comissão quando vender o seu artigo. Pode inserir os seus anúncios sem custo algum."
+      },
+      "latency_ms": 6201.0,
+      "error_type": null,
+      "error_status": null,
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-02",
+      "inferred_action": "answer",
+      "answer": "O seu anúncio ficará publicado por um período de 60 dias se não o apagar antes. Após esses 60 dias, poderá renová-lo por um igual período de tempo.",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "",
+        "standalone_question": "Por quanto tempo fica publicado um anúncio se eu não o apagar, e é possível renová-lo?",
+        "needs_clarification": false
+      },
+      "structured_answer": {
+        "sources": [
+          {
+            "chunk_id": "faq-003",
+            "question": "Qual é a validade de um anúncio?"
+          }
+        ],
+        "topics": [
+          "publicação de anúncios",
+          "renovação de anúncios"
+        ],
+        "confidence_score": "high",
+        "missing_info": [],
+        "relevant_contact_form": "none",
+        "suggested_response": "O seu anúncio ficará publicado por um período de 60 dias se não o apagar antes. Após esses 60 dias, poderá renová-lo por um igual período de tempo."
+      },
+      "latency_ms": 2966.7,
+      "error_type": null,
+      "error_status": null,
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-03",
+      "inferred_action": "answer",
+      "answer": "Para encontrar a lista dos seus anúncios publicados, deve aceder à sua área pessoal no website e entrar na secção \"Meus anúncios\", onde encontrará todos os seus anúncios publicados no CustoJusto.",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "Para ver a lista dos seus anúncios publicados, aceda à sua conta e procure a secção \"Os meus anúncios\" ou \"Meus anúncios\" no menu. Se precisar de ajuda para encontrar esta opção, avise-me.",
+        "standalone_question": "Como posso encontrar a lista dos meus anúncios publicados no website de classificados?",
+        "needs_clarification": false
+      },
+      "structured_answer": {
+        "sources": [
+          {
+            "chunk_id": "faq-014",
+            "question": "Como faço para localizar o meu anúncio?"
+          }
+        ],
+        "topics": [
+          "lista anúncios publicados",
+          "área pessoal",
+          "Meus anúncios"
+        ],
+        "confidence_score": "high",
+        "missing_info": [],
+        "relevant_contact_form": "none",
+        "suggested_response": "Para encontrar a lista dos seus anúncios publicados, deve aceder à sua área pessoal no website e entrar na secção \"Meus anúncios\", onde encontrará todos os seus anúncios publicados no CustoJusto."
+      },
+      "latency_ms": 4173.9,
+      "error_type": null,
+      "error_status": null,
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-04",
+      "inferred_action": "answer",
+      "answer": "Para recuperar a palavra-passe da sua conta, selecione a opção “não tem a password?”, insira o endereço de email associado à sua conta e clique em “Enviar”. Irá receber um link na sua caixa de email que permitirá proceder à alteração da sua palavra-passe.",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "Para recuperar a palavra-passe, pode utilizar a funcionalidade de recuperação de senha no nosso website, onde receberá instruções por email. Se precisar de ajuda adicional, estou aqui para o apoiar.",
+        "standalone_question": "Como posso recuperar a palavra-passe da minha conta se ainda tenho acesso ao email associado?",
+        "needs_clarification": false
+      },
+      "structured_answer": {
+        "sources": [
+          {
+            "chunk_id": "faq-015",
+            "question": "Esqueci-me da password!"
+          }
+        ],
+        "topics": [
+          "recuperação de palavra-passe"
+        ],
+        "confidence_score": "high",
+        "missing_info": [],
+        "relevant_contact_form": "none",
+        "suggested_response": "Para recuperar a palavra-passe da sua conta, selecione a opção “não tem a password?”, insira o endereço de email associado à sua conta e clique em “Enviar”. Irá receber um link na sua caixa de email que permitirá proceder à alteração da sua palavra-passe."
+      },
+      "latency_ms": 3637.3,
+      "error_type": null,
+      "error_status": null,
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-05",
+      "inferred_action": "clarify",
+      "answer": "Por favor, indica para qual website de classificados gratuito pretendes guardar a pesquisa para que eu possa ajudar-te. Em geral, o número de pesquisas guardadas pode variar consoante o serviço.",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "Por favor, indica para qual website de classificados gratuito pretendes guardar a pesquisa para que eu possa ajudar-te. Em geral, o número de pesquisas guardadas pode variar consoante o serviço.",
+        "standalone_question": "Como posso guardar uma pesquisa no website de classificados gratuito e qual é o limite de pesquisas que posso guardar?",
+        "needs_clarification": true
+      },
+      "structured_answer": null,
+      "latency_ms": 1223.9,
+      "error_type": null,
+      "error_status": null,
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-06",
+      "inferred_action": "answer",
+      "answer": "O novo chat traz várias melhorias, incluindo pesquisas pelos títulos das conversas, uma interface mais intuitiva, melhorias de desempenho, estabilidade, segurança e proteção de dados. Além disso, é agora possível editar ou apagar mensagens e anexos enviados por engano, facilitando corrigir erros na conversa. Também foi simplificada a opção de reportar ou bloquear utilizadores. (Fontes: faq-056, faq-051)",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "O novo chat inclui várias melhorias para facilitar a comunicação; atualmente, não é possível editar mensagens enviadas, mas pode enviar uma nova mensagem para corrigir o erro.",
+        "standalone_question": "Quais são as novidades do novo chat e posso editar mensagens enviadas por engano no website de classificados?",
+        "needs_clarification": false
+      },
+      "structured_answer": {
+        "sources": [
+          {
+            "chunk_id": "faq-056",
+            "question": "Que alterações têm este novo chat?"
+          },
+          {
+            "chunk_id": "faq-051",
+            "question": "O que mudou na nova versão da plataforma de chat?"
+          }
+        ],
+        "topics": [
+          "novo chat",
+          "editar mensagens"
+        ],
+        "confidence_score": "high",
+        "missing_info": [],
+        "relevant_contact_form": "none",
+        "suggested_response": "O novo chat traz várias melhorias, incluindo pesquisas pelos títulos das conversas, uma interface mais intuitiva, melhorias de desempenho, estabilidade, segurança e proteção de dados. Além disso, é agora possível editar ou apagar mensagens e anexos enviados por engano, facilitando corrigir erros na conversa. Também foi simplificada a opção de reportar ou bloquear utilizadores. (Fontes: faq-056, faq-051)"
+      },
+      "latency_ms": 4753.6,
+      "error_type": null,
+      "error_status": null,
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-07",
+      "inferred_action": "answer",
+      "answer": "Não, não é permitido usar código HTML para formatar o texto dos anúncios. Qualquer código HTML que inserir será apagado do anúncio.",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "",
+        "standalone_question": "Posso usar HTML para formatar o texto dos anúncios no website de classificados?",
+        "needs_clarification": false
+      },
+      "structured_answer": {
+        "sources": [
+          {
+            "chunk_id": "faq-008",
+            "question": "Posso colocar código HTML no meu anúncio?"
+          }
+        ],
+        "topics": [
+          "formatação do texto dos anúncios",
+          "uso de HTML em anúncios"
+        ],
+        "confidence_score": "high",
+        "missing_info": [],
+        "relevant_contact_form": "none",
+        "suggested_response": "Não, não é permitido usar código HTML para formatar o texto dos anúncios. Qualquer código HTML que inserir será apagado do anúncio."
+      },
+      "latency_ms": 2841.1,
+      "error_type": null,
+      "error_status": null,
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-11",
+      "inferred_action": "reject",
+      "answer": "Poderia indicar a que opção se refere para que eu possa ajudá-lo melhor?",
+      "validation": {
+        "is_valid_question": false,
+        "suggested_response": "Poderia indicar a que opção se refere para que eu possa ajudá-lo melhor?",
+        "standalone_question": "",
+        "needs_clarification": true
+      },
+      "structured_answer": null,
+      "latency_ms": 923.8,
+      "error_type": null,
+      "error_status": null,
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-12",
+      "inferred_action": "clarify",
+      "answer": "Podes indicar o que está errado no teu anúncio para que te possa ajudar a corrigir?",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "Podes indicar o que está errado no teu anúncio para que te possa ajudar a corrigir?",
+        "standalone_question": "Como posso corrigir um anúncio que não está bem publicado no website de classificados?",
+        "needs_clarification": true
+      },
+      "structured_answer": null,
+      "latency_ms": 1702.6,
+      "error_type": null,
+      "error_status": null,
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-13",
+      "inferred_action": "clarify",
+      "answer": "Por favor, pode especificar qual é o problema com o pagamento no CustoJusto para que eu possa ajudar melhor?",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "Por favor, pode especificar qual é o problema com o pagamento no CustoJusto para que eu possa ajudar melhor?",
+        "standalone_question": "Qual é o problema que está a ter com um pagamento no CustoJusto?",
+        "needs_clarification": true
+      },
+      "structured_answer": null,
+      "latency_ms": 1049.9,
+      "error_type": null,
+      "error_status": null,
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-16",
+      "inferred_action": "clarify",
+      "answer": "A partir das informações disponíveis, pode alterar o seu anúncio acedendo à opção \"Modificar\" na página de visualização do seu anúncio e, após inserir a sua password, efetuar as alterações necessárias. Depois das alterações, o anúncio será revisto e atualizado. No entanto, não existe detalhe específico sobre como solicitar uma revisão manual para um anúncio rejeitado. Poderia indicar se deseja que o ajude a alterar o anúncio para submissão de nova revisão?",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "Vamos encaminhar o seu pedido para a equipa de revisão manual para que possam analisar o motivo da rejeição do anúncio 900000001.",
+        "standalone_question": "Como posso solicitar uma revisão manual para um anúncio rejeitado no website de classificados?",
+        "needs_clarification": false
+      },
+      "structured_answer": {
+        "sources": [
+          {
+            "chunk_id": "faq-016",
+            "question": "Como posso alterar o meu anúncio?"
+          }
+        ],
+        "topics": [
+          "revisão manual",
+          "anúncio rejeitado"
+        ],
+        "confidence_score": "medium",
+        "missing_info": [
+          "Não há informação específica sobre como solicitar uma revisão manual para um anúncio rejeitado"
+        ],
+        "relevant_contact_form": "none",
+        "suggested_response": "A partir das informações disponíveis, pode alterar o seu anúncio acedendo à opção \"Modificar\" na página de visualização do seu anúncio e, após inserir a sua password, efetuar as alterações necessárias. Depois das alterações, o anúncio será revisto e atualizado. No entanto, não existe detalhe específico sobre como solicitar uma revisão manual para um anúncio rejeitado. Poderia indicar se deseja que o ajude a alterar o anúncio para submissão de nova revisão?"
+      },
+      "latency_ms": 3654.8,
+      "error_type": null,
+      "error_status": null,
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-17",
+      "inferred_action": "answer",
+      "answer": "Para obter suporte técnico em relação ao erro 500 nas páginas de anúncios, primeiro tente atualizar a página ou reiniciar a aplicação. Se o erro persistir, deve contactar o suporte técnico através do e-mail equipa@custojusto.pt.",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "Por favor, forneça mais detalhes sobre o erro 500, como em que momento ocorre, para podermos ajudar na resolução técnica.",
+        "standalone_question": "Como posso obter suporte técnico para o erro 500 nas páginas de anúncios do website de classificados?",
+        "needs_clarification": false
+      },
+      "structured_answer": {
+        "sources": [
+          {
+            "chunk_id": "faq-059",
+            "question": "O que fazer se eu encontrar um erro ou bug?"
+          }
+        ],
+        "topics": [
+          "suporte técnico",
+          "erro 500",
+          "páginas de anúncios",
+          "website de classificados"
+        ],
+        "confidence_score": "high",
+        "missing_info": [],
+        "relevant_contact_form": "problemas_tecnicos",
+        "suggested_response": "Para obter suporte técnico em relação ao erro 500 nas páginas de anúncios, primeiro tente atualizar a página ou reiniciar a aplicação. Se o erro persistir, deve contactar o suporte técnico através do e-mail equipa@custojusto.pt."
+      },
+      "latency_ms": 3267.5,
+      "error_type": null,
+      "error_status": null,
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-18",
+      "inferred_action": "escalate",
+      "answer": "Para questões relacionadas com duplicação de cobranças e pedidos de reembolso, aconselhamos que contacte o nosso suporte através do formulário específico para pagamentos e serviços. Assim, poderá obter assistência personalizada para resolver o seu problema.\n\nFormulário recomendado: `/ajuda-contacto?section=12`",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "Iremos encaminhar a sua questão para a equipa responsável para análise da duplicação e processamento do reembolso. Por favor, aguarde o nosso contacto com a resolução.",
+        "standalone_question": "Como posso resolver a duplicação de cobranças no extrato e solicitar o reembolso?",
+        "needs_clarification": false
+      },
+      "structured_answer": {
+        "sources": [],
+        "topics": [
+          "duplicação de cobranças",
+          "reembolso"
+        ],
+        "confidence_score": "low",
+        "missing_info": [],
+        "relevant_contact_form": "pagamentos_servicos",
+        "suggested_response": "Para questões relacionadas com duplicação de cobranças e pedidos de reembolso, aconselhamos que contacte o nosso suporte através do formulário específico para pagamentos e serviços. Assim, poderá obter assistência personalizada para resolver o seu problema."
+      },
+      "latency_ms": 3164.6,
+      "error_type": null,
+      "error_status": null,
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-19",
+      "inferred_action": "clarify",
+      "answer": "As mensagens para o anunciante podem não estar a ser entregues por várias razões. Se o anúncio estiver numa categoria sem serviço de chat activo, as mensagens são enviadas por email para o anunciante, que deve verificar a sua caixa de entrada e também a pasta de Spam, conforme indicado na FAQ faq-011. Além disso, se o endereço de email do anunciante estiver incorrecto no anúncio, as mensagens não serão entregues, sendo necessário republicar o anúncio com o endereço correcto (faq-011). Tenha também em conta que mensagens consideradas publicidade são filtradas automaticamente e não chegam ao destinatário (faq-027). Por fim, nas categorias sem chat, o contacto continua por email, e não pelo chat (faq-040). Pode confirmar se a categoria do anúncio tem chat activo e se o email está correcto para melhor diagnóstico.",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "Vamos encaminhar o seu pedido para a equipa técnica verificar a entrega das mensagens ao anunciante do anúncio 900000002.",
+        "standalone_question": "Por que motivo as mensagens para o anunciante do anúncio 900000002 não estão a ser entregues?",
+        "needs_clarification": false
+      },
+      "structured_answer": {
+        "sources": [
+          {
+            "chunk_id": "faq-027",
+            "question": "Posso enviar publicidade?"
+          },
+          {
+            "chunk_id": "faq-011",
+            "question": "Não recebi nenhum email! O que fazer?"
+          },
+          {
+            "chunk_id": "faq-040",
+            "question": "E como vai funcionar nas restantes categorias em que ainda não está activo o serviço de chat?"
+          }
+        ],
+        "topics": [
+          "entrega de mensagens",
+          "comunicação com anunciante"
+        ],
+        "confidence_score": "high",
+        "missing_info": [
+          "Saber se o anúncio 900000002 está numa categoria com serviço de chat activo ou não.",
+          "Confirmar se o endereço de email do anunciante está correcto no anúncio."
+        ],
+        "relevant_contact_form": "none",
+        "suggested_response": "As mensagens para o anunciante podem não estar a ser entregues por várias razões. Se o anúncio estiver numa categoria sem serviço de chat activo, as mensagens são enviadas por email para o anunciante, que deve verificar a sua caixa de entrada e também a pasta de Spam, conforme indicado na FAQ faq-011. Além disso, se o endereço de email do anunciante estiver incorrecto no anúncio, as mensagens não serão entregues, sendo necessário republicar o anúncio com o endereço correcto (faq-011). Tenha também em conta que mensagens consideradas publicidade são filtradas automaticamente e não chegam ao destinatário (faq-027). Por fim, nas categorias sem chat, o contacto continua por email, e não pelo chat (faq-040). Pode confirmar se a categoria do anúncio tem chat activo e se o email está correcto para melhor diagnóstico."
+      },
+      "latency_ms": 3999.7,
+      "error_type": null,
+      "error_status": null,
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-21",
+      "inferred_action": "reject",
+      "answer": "Compreendo a sua preocupação, mas não podemos processar reclamações formais sobre o atendimento ao cliente através deste canal. Recomendo contactar diretamente o serviço de apoio para questões relacionadas com o atendimento.",
+      "validation": {
+        "is_valid_question": false,
+        "suggested_response": "Compreendo a sua preocupação, mas não podemos processar reclamações formais sobre o atendimento ao cliente através deste canal. Recomendo contactar diretamente o serviço de apoio para questões relacionadas com o atendimento.",
+        "standalone_question": "",
+        "needs_clarification": false
+      },
+      "structured_answer": null,
+      "latency_ms": 1508.9,
+      "error_type": null,
+      "error_status": null,
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-22",
+      "inferred_action": "reject",
+      "answer": "",
+      "validation": {
+        "is_valid_question": false,
+        "suggested_response": "",
+        "standalone_question": "",
+        "needs_clarification": false
+      },
+      "structured_answer": null,
+      "latency_ms": 1126.5,
+      "error_type": null,
+      "error_status": null,
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-23",
+      "inferred_action": "reject",
+      "answer": "",
+      "validation": {
+        "is_valid_question": false,
+        "suggested_response": "",
+        "standalone_question": "",
+        "needs_clarification": false
+      },
+      "structured_answer": null,
+      "latency_ms": 1024.3,
+      "error_type": null,
+      "error_status": null,
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-24",
+      "inferred_action": "reject",
+      "answer": "",
+      "validation": {
+        "is_valid_question": false,
+        "suggested_response": "",
+        "standalone_question": "",
+        "needs_clarification": false
+      },
+      "structured_answer": null,
+      "latency_ms": 1241.6,
+      "error_type": null,
+      "error_status": null,
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-26",
+      "inferred_action": "answer",
+      "answer": "O novo chat do CustoJusto traz várias novidades e melhorias. Agora pode pesquisar pelos títulos das conversas e editar ou apagar mensagens e anexos enviados por engano. A opção para reportar ou bloquear um utilizador está mais fácil e intuitiva. Há também melhorias no desempenho, com melhor tempo de resposta e maior estabilidade, além de melhorias na segurança e proteção de dados. O chat permite uma comunicação rápida e segura entre comprador e vendedor, está disponível em algumas categorias e pode ser acedido tanto no computador como na app iOS. Pode ainda bloquear utilizadores indesejados e receber notificações para se manter informado. Estas atualizações tornam a experiência de comunicação mais eficiente e segura. (faq-056, faq-051, faq-034, faq-033)",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "O novo chat inclui funcionalidades como mensagens em tempo real, notificações e integração com o suporte ao cliente. Posso ajudar a explicar alguma funcionalidade específica?",
+        "standalone_question": "Quais são as novidades do novo chat no website de classificados?",
+        "needs_clarification": false
+      },
+      "structured_answer": {
+        "sources": [
+          {
+            "chunk_id": "faq-056",
+            "question": "Que alterações têm este novo chat?"
+          },
+          {
+            "chunk_id": "faq-051",
+            "question": "O que mudou na nova versão da plataforma de chat?"
+          },
+          {
+            "chunk_id": "faq-034",
+            "question": "Como funciona o chat?"
+          },
+          {
+            "chunk_id": "faq-033",
+            "question": "Para que serve o chat do CustoJusto?"
+          }
+        ],
+        "topics": [
+          "novo chat",
+          "funcionalidades chat",
+          "melhorias plataforma chat"
+        ],
+        "confidence_score": "high",
+        "missing_info": [],
+        "relevant_contact_form": "none",
+        "suggested_response": "O novo chat do CustoJusto traz várias novidades e melhorias. Agora pode pesquisar pelos títulos das conversas e editar ou apagar mensagens e anexos enviados por engano. A opção para reportar ou bloquear um utilizador está mais fácil e intuitiva. Há também melhorias no desempenho, com melhor tempo de resposta e maior estabilidade, além de melhorias na segurança e proteção de dados. O chat permite uma comunicação rápida e segura entre comprador e vendedor, está disponível em algumas categorias e pode ser acedido tanto no computador como na app iOS. Pode ainda bloquear utilizadores indesejados e receber notificações para se manter informado. Estas atualizações tornam a experiência de comunicação mais eficiente e segura. (faq-056, faq-051, faq-034, faq-033)"
+      },
+      "latency_ms": 4700.5,
+      "error_type": null,
+      "error_status": null,
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-28",
+      "inferred_action": "answer",
+      "answer": "Para recuperar a palavra-passe da sua conta tendo acesso ao email associado, selecione a opção “não tem a password?”, insira o endereço de email que utilizou para inserir o seu anúncio e clique em “Enviar”. Receberá na sua caixa de email um link para proceder à alteração da palavra-passe.",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "Por favor, utilize a funcionalidade de recuperação de palavra-passe disponível na página de início de sessão, seguindo as instruções enviadas para o seu email.",
+        "standalone_question": "Como posso recuperar a palavra-passe da minha conta tendo acesso ao email associado?",
+        "needs_clarification": false
+      },
+      "structured_answer": {
+        "sources": [
+          {
+            "chunk_id": "faq-015",
+            "question": "Esqueci-me da password!"
+          }
+        ],
+        "topics": [
+          "recuperação de password",
+          "acesso à conta"
+        ],
+        "confidence_score": "high",
+        "missing_info": [],
+        "relevant_contact_form": "none",
+        "suggested_response": "Para recuperar a palavra-passe da sua conta tendo acesso ao email associado, selecione a opção “não tem a password?”, insira o endereço de email que utilizou para inserir o seu anúncio e clique em “Enviar”. Receberá na sua caixa de email um link para proceder à alteração da palavra-passe."
+      },
+      "latency_ms": 3271.8,
+      "error_type": null,
+      "error_status": null,
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    }
+  ],
+  "metrics": {
+    "cases_completed": 20,
+    "errors": 0,
+    "action_accuracy": {
+      "passed": 14,
+      "total": 20,
+      "rate": 0.7
+    },
+    "escalation_recall": {
+      "passed": 1,
+      "total": 5,
+      "rate": 0.2
+    },
+    "correct_escalation_destination": {
+      "passed": 1,
+      "total": 5,
+      "rate": 0.2
+    },
+    "answers_when_non_answer_expected": {
+      "passed": 1,
+      "total": 11,
+      "rate": 0.09090909090909091
+    },
+    "expected_source_group_coverage": {
+      "passed": 8,
+      "total": 9,
+      "rate": 0.8888888888888888
+    },
+    "answer_citation_id_validity": {
+      "passed": 9,
+      "total": 9,
+      "rate": 1.0
+    },
+    "unsupported_claim_rate_human": {
+      "passed": 0,
+      "total": 0,
+      "rate": null
+    },
+    "follow_up_relevance_human": {
+      "passed": 0,
+      "total": 0,
+      "rate": null
+    },
+    "category_accuracy": null,
+    "confusion": {
+      "answer": {
+        "answer": 8,
+        "clarify": 1
+      },
+      "clarify": {
+        "reject": 1,
+        "clarify": 2
+      },
+      "escalate": {
+        "clarify": 2,
+        "answer": 1,
+        "escalate": 1,
+        "reject": 1
+      },
+      "reject": {
+        "reject": 3
+      }
+    },
+    "mean_latency_ms": 2821.7,
+    "p95_latency_ms": 4753.6
+  }
+}

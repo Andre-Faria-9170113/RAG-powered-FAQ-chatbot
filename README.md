@@ -56,3 +56,24 @@ Tests mock API calls and cover follow-up resolution plumbing, early exits,
 summary retention, repeated compaction, transcript preservation and reset.
 See [the implementation review](docs/implementation-review.md) for remaining
 differences from the brief and course references.
+
+## Triage evaluation
+
+`data/evaluations/triage_cases.json` contains 30 draft-labelled Portuguese support
+cases: 20 development cases and 10 holdout cases. Labels need review by the
+project owner before being treated as human-approved ground truth.
+
+```bash
+.venv/bin/python evaluate.py --dry-run
+.venv/bin/python evaluate.py --split development --output reports/development-run-01
+```
+
+Live evaluation makes paid API calls and generates JSON/Markdown reports using
+the current chatbot. Holdout is not run by default. Category accuracy is not yet
+measurable; inferred actions, contact routing and source selection are scored.
+Factual support and clarification quality have separate human-review fields.
+
+See [the evaluation guide](docs/evaluation.md) for metric definitions, label
+review, report regeneration and reproducibility details.
+The [initial development baseline](docs/evaluations/README.md) includes results
+and failure examples; the holdout split remains unused.
