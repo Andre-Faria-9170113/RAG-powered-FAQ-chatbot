@@ -75,7 +75,7 @@ class ContactCatalogTest(unittest.TestCase):
     def test_validation_and_generation_receive_the_official_subjects(self) -> None:
         client = Mock()
         client.responses.parse.return_value = SimpleNamespace(output_parsed=QuestionValidation(
-            is_valid_question=True, category="imprensa_publicidade", suggested_response="", standalone_question="Pedido de imprensa"
+            is_valid_question=True, category="imprensa_publicidade", urgency="low", urgency_reason="Contacto institucional.", suggested_response="", standalone_question="Pedido de imprensa"
         ))
         validate_question(client, "Pedido de imprensa")
         validation_prompt = client.responses.parse.call_args.kwargs["instructions"]
@@ -113,7 +113,7 @@ class ContactCatalogTest(unittest.TestCase):
             self.assertEqual(CONTACT_LABELS[updated[0].key], updated[0].label)
             self.assertNotEqual(contact_forms.CONTACT_FORMS_VERSION, CONTACT_FORMS_VERSION)
             client.responses.parse.return_value = SimpleNamespace(output_parsed=QuestionValidation(
-                is_valid_question=True, category="outros", suggested_response="", standalone_question="Question"
+                is_valid_question=True, category="outros", urgency="low", urgency_reason="Pedido informativo.", suggested_response="", standalone_question="Question"
             ))
             validate_question(client, "Question")
             self.assertIn("Updated contact subject", client.responses.parse.call_args.kwargs["instructions"])

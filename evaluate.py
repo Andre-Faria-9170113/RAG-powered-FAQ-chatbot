@@ -54,6 +54,8 @@ class _RecordedQuestionValidation(StrictModel):
     standalone_question: str = ""
     needs_clarification: bool = False
     category: bot.RequestCategory | None = None
+    urgency: bot.RequestUrgency | None = None
+    urgency_reason: str | None = None
 
 
 class HistoryMessage(StrictModel):
@@ -68,6 +70,7 @@ class EvaluationCase(StrictModel):
     question: str = Field(min_length=1)
     history: list[HistoryMessage] = Field(default_factory=list)
     expected_action: Action
+    expected_urgency: bot.RequestUrgency | None = None
     expected_contact_form: str | None = None
     expected_source_groups: list[list[str]] = Field(default_factory=list)
     critical: bool = False
@@ -84,6 +87,9 @@ class EvaluationCase(StrictModel):
             raise ValueError("An expected answer needs supporting FAQ groups.")
         if any(not group for group in self.expected_source_groups):
             raise ValueError("Source alternative groups cannot be empty.")
+        if self.expected_urgency is not None:
+            if (self.expected_urgency == "not_applicable") != (self.expected_action == "reject"):
+                raise ValueError("Only rejected cases must label urgency as not_applicable.")
         return self
 
 
@@ -202,6 +208,7 @@ def ratio(passed: int, total: int) -> dict:
 def summarize(
     cases: list[EvaluationCase], results: list[CaseResult], *,
     category_classification_enabled: bool = False,
+    urgency_assessment_enabled: bool = False,
 ) -> dict:
     by_id = {case.id: case for case in cases}
     if len({result.case_id for result in results}) != len(results):
@@ -213,6 +220,7 @@ def summarize(
     matched = routed = escalated = false_answers = source_hits = source_groups = 0
     expected_escalations = non_answers = citation_passes = answer_count = 0
     category_matches = category_predictions = 0
+    urgency_matches = urgency_predictions = urgency_labels = high_urgency_hits = high_urgency_labels = 0
     judged_support: list[bool] = []
     judged_followups: list[bool] = []
     for result in results:
@@ -226,6 +234,14 @@ def summarize(
         if result.validation is not None and result.validation.category is not None:
             category_predictions += 1
             category_matches += result.validation.category == case.category
+        predicted_urgency = result.validation.urgency if result.validation else None
+        urgency_predictions += predicted_urgency is not None
+        if case.expected_urgency is not None:
+            urgency_labels += 1
+            urgency_matches += predicted_urgency == case.expected_urgency
+            if case.expected_urgency == "high":
+                high_urgency_labels += 1
+                high_urgency_hits += predicted_urgency == "high"
         answer = result.structured_answer
         cited = {source.chunk_id for source in answer.sources} if answer else set()
         if case.expected_action == "escalate":
@@ -254,7 +270,7 @@ def summarize(
         stage: summarize_calls([call for call in calls if call.stage == stage])
         for stage in sorted({call.stage for call in calls})
     }
-    return {
+    summary = {
         "cases_completed": len(results),
         "errors": sum(result.inferred_action == "error" for result in results),
         "action_accuracy": ratio(matched, len(results)),
@@ -274,6 +290,11 @@ def summarize(
         "p95_latency_ms": latency[math.ceil(len(latency) * 0.95) - 1] if latency else None,
         "usage": usage,
     }
+    if urgency_assessment_enabled or urgency_predictions or urgency_labels:
+        has_assessment = urgency_assessment_enabled or urgency_predictions > 0
+        summary["urgency_accuracy"] = ratio(urgency_matches, urgency_labels) if urgency_labels and has_assessment else None
+        summary["high_urgency_recall"] = ratio(high_urgency_hits, high_urgency_labels) if urgency_labels and has_assessment else None
+    return summary
 
 
 def format_metric(metric: dict) -> str:
@@ -293,6 +314,7 @@ def render_report(dataset: EvaluationDataset, cases: list[EvaluationCase], paylo
     metrics = summarize(
         cases, results,
         category_classification_enabled=payload["metadata"].get("category_classification_version") == 1,
+        urgency_assessment_enabled=payload["metadata"].get("urgency_assessment_version") == 1,
     )
     lines = [
         "# Triage evaluation", "",
@@ -309,16 +331,18 @@ def render_report(dataset: EvaluationDataset, cases: list[EvaluationCase], paylo
             "Categories use the validation-stage prediction, independent of action and contact destination; missing predictions count as failures."
             if metrics["category_accuracy"] is not None
             else "Category accuracy is N/A: no category predictions were recorded in this historical run."
-        ), "",
+        ),
+        "Urgency checks require expected_urgency labels and recorded assessment capability; unlabeled cases are excluded, not assumed low. Historical runs are not reassessed.", "",
         "| Automatic check | Result |", "|---|---|",
     ]
     for key in (
         "action_accuracy", "escalation_recall", "correct_escalation_destination",
         "answers_when_non_answer_expected", "expected_source_group_coverage",
-        "answer_citation_id_validity", "category_accuracy",
+        "answer_citation_id_validity", "category_accuracy", "urgency_accuracy", "high_urgency_recall",
     ):
-        metric = metrics[key]
-        lines.append(f"| {key} | {format_metric(metric) if metric is not None else 'N/A (not recorded)'} |")
+        metric = metrics.get(key)
+        unavailable = "N/A (labels or predictions unavailable)" if key in {"urgency_accuracy", "high_urgency_recall"} else "N/A (not recorded)"
+        lines.append(f"| {key} | {format_metric(metric) if metric is not None else unavailable} |")
     lines.extend([
         "", "Lower is better for answers_when_non_answer_expected; higher is better for the other automatic checks.",
         "Runtime errors count as action failures and missed required escalations; expected evidence gets zero credit.",
@@ -379,6 +403,7 @@ def render_report(dataset: EvaluationDataset, cases: list[EvaluationCase], paylo
             f"### {case.id}: {'action match' if matched else 'ACTION MISMATCH'}", "",
             f"Category label: `{case.category}`; critical: `{case.critical}`.",
             f"Predicted category: `{result.validation.category if result.validation and result.validation.category is not None else 'not recorded'}`.",
+            f"Expected urgency: `{case.expected_urgency or 'not labeled'}`; predicted: `{result.validation.urgency if result.validation and result.validation.urgency is not None else 'not recorded'}`.",
             f"Expected action: `{case.expected_action}`; inferred: `{result.inferred_action}`.",
             f"Expected contact: `{case.expected_contact_form or 'none'}`.",
             f"Elapsed case latency: {result.latency_ms:.1f} ms.",
@@ -416,6 +441,8 @@ def render_report(dataset: EvaluationDataset, cases: list[EvaluationCase], paylo
                 issues = [issue.model_dump() for issue in result.validation_issues]
                 lines.append(f"Validation diagnostics (final failure): `{issues}`.")
         if result.validation:
+            if result.validation.urgency_reason:
+                lines.append(f"\nUrgency reason: {result.validation.urgency_reason}")
             lines.append(
                 f"\nValidation flags: is_valid_question=`{result.validation.is_valid_question}`; "
                 f"needs_clarification=`{result.validation.needs_clarification}`."
@@ -473,8 +500,9 @@ def run_metadata(
         "reporting_currency": "EUR",
         "usage_tracking_version": 2,
         "triage_decision_version": 2,
-        "validation_contract_version": 5,
+        "validation_contract_version": 6,
         "category_classification_version": 1,
+        "urgency_assessment_version": 1,
         "max_structured_repair_attempts": 1,
         "git_revision": revision,
         "label_status": dataset.label_status,
@@ -491,6 +519,7 @@ def write_reports(
     payload["metrics"] = summarize(
         cases, results,
         category_classification_enabled=payload["metadata"].get("category_classification_version") == 1,
+        urgency_assessment_enabled=payload["metadata"].get("urgency_assessment_version") == 1,
     )
     output.with_suffix(".json").write_text(
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"

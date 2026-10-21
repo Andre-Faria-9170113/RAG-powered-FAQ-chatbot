@@ -8,15 +8,18 @@ the initial baseline predates that update and remains historical.
 
 ## Dataset and label ownership
 
-`data/evaluations/triage_cases.json` (v1.1) contains 34 synthetic Portuguese support
-requests, authored against the local FAQ corpus. They started as assistant-authored
-drafts; owner approval is recorded in the working file's `label_status` and
-`reviewed_by`. They are synthetic, not production conversations or an independently
-validated benchmark. Approval of expected actions, contact destinations and
-rubrics is separate from judging the generated responses.
+`data/evaluations/triage_cases.json` (v1.6) contains 45 synthetic Portuguese support
+requests, authored against the local FAQ corpus: 31 development and 14 holdout
+cases. The expanded dataset is `draft_for_human_review`, with no named reviewer,
+pending approval of the new urgency expectations and added cases. The original
+34-case v1.1 approval is preserved byte-for-byte in
+`docs/evaluations/datasets/triage-cases-v1.1-reviewed.json`; its existing expectations were
+not revoked or silently relabelled. These are synthetic cases, not production
+conversations or an independently validated benchmark. Label approval remains
+separate from judging the generated responses.
 
-There are 22 development cases and 12 holdout cases. The cases include 14 expected
-answers, 5 clarifications, 11 escalations and 4 rejections. Four cases provide
+The cases include 16 expected answers, 6 clarifications, 18 escalations and
+5 rejections. Six cases provide
 conversation context, including the new-chat regression, a topic change and a
 summary. All ten contact destinations appear in escalation labels. IDs and
 payment/support references are synthetic; no real customer details are needed.
@@ -29,6 +32,7 @@ Each case contains:
 
 - `category`: the expected request category, scored against the validation-stage prediction.
 - `expected_action`: answer, clarify, escalate or reject.
+- Optional `expected_urgency`: an urgency label; absence means unlabelled, not low.
 - `expected_contact_form`: the exact destination for required escalations.
 - `expected_source_groups`: for each group, citing any one listed FAQ satisfies
   that evidence expectation. Multiple groups mean multiple required facts.
@@ -58,6 +62,57 @@ Cases 31-34 add suggestions, institutional press, mobile interface issues and
 phone-number access. These new destinations should not be collapsed into `outros`.
 Routing precedence is an assistant interpretation of the published subjects,
 not a routing guarantee from CustoJusto, and still needs owner validation.
+
+The v1.2 urgency merge added ten development cases, renamed in v1.3 to continue
+the original `case-NN` convention as `case-35` through `case-44`.
+`urgency-06` duplicates `case-13`; the accent-normalized `urgency-07` duplicates
+`case-11`. Their `expected_urgency=unknown` labels were added to the original cases
+instead of counting the requests twice. The original 34 IDs, text, action/category/
+destination/source expectations, rubrics and holdout membership are unchanged.
+
+Two fresh v1.3 holdouts were appended as `case-45` and `case-46` (now `case-44`
+and `case-45` after v1.6 renumbering). They cover ongoing
+privacy harm and a low-urgency institutional contact request, respectively.
+Neither was run live or used to tune prompts during this change. Two examples
+are a limited check, not broad urgency validation; keep them out of development
+runs and prompt tuning. Version 1.4 completes urgency labels for all 46 cases,
+including the 32 cases previously unlabelled. These are assistant-authored
+reference labels based on the questions/history and documented policy, not
+copied from model predictions or inferred from action or `critical`. Some
+retained cases are related paraphrases, so the larger count is not independent
+statistical evidence.
+
+Version 1.5 removed the former `case-35` as a semantic duplicate of `case-01`:
+both asked about free publication and commissions with the same labels and FAQ.
+Version 1.6 closes that gap, shifting former `case-36` through `case-46` down one
+to `case-35` through `case-45`. The urgency-wording test is now `case-39`, and the
+new holdouts are `case-44`/`case-45`. Only those IDs and the dataset version changed
+in v1.6; all questions, labels and splits remain unchanged. Frozen snapshots and
+saved reports keep their original IDs and require their matching dataset hash.
+
+| Frozen urgency ID | Current case ID |
+|---|---|
+| urgency-01 | Removed duplicate; covered by case-01 |
+| urgency-02 | case-35 |
+| urgency-03 | case-36 |
+| urgency-04 | case-37 |
+| urgency-05 | case-38 |
+| urgency-06 | case-13 (duplicate) |
+| urgency-07 | case-11 (duplicate) |
+| urgency-08 | case-39 |
+| urgency-09 | case-40 |
+| urgency-10 | case-41 |
+| urgency-11 | case-42 |
+| urgency-12 | case-43 |
+
+The [frozen urgency v1.0 snapshot](evaluations/datasets/urgency-cases-v1.0.json) matches
+`development-urgency-01`. It is no longer a second actively
+maintained dataset. Default fresh runs use the merged file. Use the frozen
+v1.1 reviewed snapshot to regenerate category-era reports whose dataset hash is
+`1bc88889b039a0fa6f7293036bfbf83b24b638d556dd9ee359a4c986e540d373`.
+Do not compare the new 31-case development aggregate directly with the old
+22-case baseline as if only prompts had changed. Old reports are not rescored
+against the expanded dataset.
 
 ## Commands
 
@@ -218,7 +273,7 @@ not retry API/network errors, missing parsed responses or citation-check failure
 After a second invalid output, the case remains an error. Syntactically valid but
 semantically wrong decisions are not retried or silently changed.
 
-New run metadata records `validation_contract_version=4` and
+The repair increment introduced `validation_contract_version=4` and
 `max_structured_repair_attempts=1`. API calls use separate `validation_repair` and
 `answer_generation_repair` stages, so both attempts contribute to elapsed latency
 and usage/cost tracking. When SDK parsing raises before exposing usage, that
@@ -270,7 +325,8 @@ single category prediction for the turn, including early clarification and
 rejection; it is not inferred from FAQ `topics`, the selected action or a contact
 destination. Classification sees the current request and conversation context,
 not the evaluation labels. It does not filter retrieval or force escalation.
-Urgency and extraction of supplied details are outside this increment.
+Urgency was added in the following increment; extraction of supplied details is
+still outside the current implementation.
 
 Allowed categories are the ten official contact-topic keys plus:
 
@@ -282,8 +338,8 @@ prediction. A vague payment problem can be `pagamentos_servicos` and still need
 clarification. Follow-ups inherit the resolved topic, while an explicit topic
 change takes precedence. Category and support destination are separate decisions.
 
-Fresh runs include `category_classification_version=1` and
-`validation_contract_version=5`. `category_accuracy` uses exact label matches over
+The category increment introduced `category_classification_version=1` and
+`validation_contract_version=5` (now 6 with urgency). `category_accuracy` uses exact label matches over
 all completed cases; errors or missing predictions get no credit. Each case shows
 its expected and predicted categories. Historical results without predictions
 remain **N/A**, even when a contact destination was recorded; regeneration does
@@ -302,15 +358,133 @@ identifiers/expected source selection; they do **not** establish factual support
 or detect every unsupported claim. A high model confidence is not a calibrated
 probability and does not change the expected labels.
 
+### Urgency assessment
+
+This is a project policy for classifying user-reported time sensitivity, not an
+official CustoJusto priority system, SLA or claim that an incident is verified.
+Urgency is separate from category, evidence confidence and the next action.
+
+The validation output requires `urgency` and `urgency_reason`, including for early
+replies. New metadata includes `validation_contract_version=6` and
+`urgency_assessment_version=1`. No extra model stage was added.
+
+#### Urgency scale
+
+| Value | Meaning |
+|---|---|
+| `low` | Information, routine use or a suggestion without an active problem or concrete time consequence. |
+| `normal` | A concrete problem or blockage, without reported ongoing harm or a concrete time consequence. |
+| `high` | Reported ongoing harm, such as active unauthorized access or continuing unauthorized charges, or an explicit near deadline with a concrete consequence for the issue. |
+| `unknown` | The actual problem or impact is too unclear to assess urgency. |
+| `not_applicable` | A rejected request, including disallowed requests. |
+
+Saying "urgent", using capitals, expressing frustration, requesting a human,
+having a persistent error or mentioning a payment is not sufficient for `high`.
+A duplicate charge that already occurred is normally `normal` unless the user
+also reports ongoing harm or a concrete time consequence. A vague payment
+problem is `unknown`, not presumed low or high.
+
+`urgency_reason` is a short Portuguese explanation based on the user's account,
+not hidden reasoning or a verified diagnosis. It should not repeat sensitive
+identifiers or invent deadlines. The model assesses the current request with
+history; an explicit topic change or resolved incident overrides stale urgency.
+Context summaries preserve reported impact, deadlines and resolved problems.
+
+#### Effect on the flow
+
+The existing validation call produces `urgency` and `urgency_reason` on every
+successful turn. The UI stores them as message metadata, outside model history,
+and displays them under "Detalhes da resposta", including early clarification
+and rejection replies. Older messages without these fields remain readable.
+
+The bounded urgency value also reaches answer generation as labelled context.
+It does not change retrieval, confidence thresholds or contact destinations.
+There is no `high => escalate` or `normal => clarify` rule:
+
+- Answer when FAQs resolve the request, without inventing facts or actions.
+- Clarify when a missing detail could change the answer or channel, including an
+  essential question on a high-urgency request whose problem is unidentified.
+- Escalate when human access or action is needed, even if urgency is low/normal.
+- With concrete ongoing harm, avoid redundant diagnostics when the human channel
+  is already identifiable. Never promise priority, submission or response times.
+
+The value is advisory metadata, not an implemented support queue. No additional
+LLM stage was added, though the existing bounded repair can still run if output
+violates its contract. Extraction of supplied user details is not implemented
+in this increment.
+
+Generation receives only the bounded urgency value as context, not the
+explanation as instructions.
+
+#### Urgency metrics and runs
+
+The main v1.6 `triage_cases.json` labels all 45 cases: 31 development and 14
+holdout. Default development runs score urgency alongside the other metrics.
+Use the [commands above](#commands) to validate or run the main dataset. The
+[dataset section](#dataset-and-label-ownership) covers approval status, historical
+snapshots, ID changes and the untouched holdout policy. No holdout was run live
+while completing its labels; keep it out of development runs and prompt tuning.
+
+`urgency_accuracy` uses exact matches over completed cases with an explicit
+`expected_urgency`; `high_urgency_recall` measures how many labelled high cases
+were predicted high. Missing predictions and runtime errors receive no credit
+on labelled cases. The denominator for urgency accuracy is 31 on a complete
+development run and 14 on holdout, rather than the earlier 12-case development
+and 2-case holdout labelled subsets. Do not interpret changed percentages as
+model improvements when coverage or the case distribution also changed.
+
+The schema still supports unlabelled historical/custom datasets. An absent
+reference label means unassessed, whereas `unknown` is a real expected class.
+Unlabelled cases are excluded. Historical runs without assessments remain N/A:
+regeneration never invents urgency from text, action, confidence, `critical` or
+contact destinations. The `critical` flag identifies evaluation risks, not time
+sensitivity. A high-urgency label never replaces semantic review of the response
+or its evidence.
+
+The frozen `docs/evaluations/datasets/urgency-cases-v1.0.json` is the 12-case draft snapshot
+matching `reports/development-urgency-01.json`, not a second actively maintained
+dataset or an independent holdout. To regenerate that report without API calls:
+
+```bash
+.venv/bin/python evaluate.py --cases docs/evaluations/datasets/urgency-cases-v1.0.json --report-from reports/development-urgency-01.json --output reports/development-urgency-01-regenerated
+```
+
+#### Completing older labels
+
+The 32 newly added reference labels were assigned from each question and supplied
+history using the scale above, without consulting generated urgency predictions.
+Existing urgency labels and all other case fields were preserved. They remain
+assistant-authored drafts, not human-approved labels.
+
+| New labels | Cases | Basis |
+|---|---|---|
+| `low` | 01-03, 05-10, 26-27, 29-32 | Routine questions, ordinary operations, policy clarification, suggestions or institutional contact without an active blockage or time consequence. |
+| `normal` | 04, 16-21, 28, 33-34 | Concrete account, publication, payment, messaging, support or interface problems, without reported ongoing harm or a near deadline. |
+| `unknown` | 12, 14-15 | The problem or intended operation remains too unclear to assess its impact. |
+| `not_applicable` | 22-25 | Rejected requests. |
+
+For example, forgetting a password is a concrete access problem (`normal`), while
+asking which photo limit applies is an informational policy question (`low`)
+even when it needs human confirmation and is marked `critical`. A past duplicate
+charge is not presumed to be continuing unauthorized loss. Clarification itself
+does not imply `unknown`: the decision and the urgency remain separate.
+
+Review the current v1.6 labels before marking the dataset human-reviewed; the
+original v1.1 approval does not automatically cover the added urgency labels.
+
 ## Human review
 
-The [current published baseline](evaluations/README.md) preserves run 07 and its
-matching execution-time dataset. A separate [qualitative AI review](evaluations/current-development-review.md)
-assesses all 22 responses against their rubrics and evidence. It is attributed
-to Codex, not a human reviewer: it does not populate the original `review` fields
-or turn the `_human` metrics into AI-graded scores. The working dataset's later
-owner approval only changed approval metadata, not the cases or expected labels.
-The raw run retains its original draft status and dataset hash for provenance.
+The [current published baseline](evaluations/README.md) preserves
+`development-run-01` and its matching v1.6 dataset and evidence snapshots. A
+separate [qualitative AI review](evaluations/2026-10-21_181409_development-run-01/review.md)
+assesses all 31 outputs against their rubrics, evidence and triage labels. It is
+attributed to Codex, not a human reviewer: it does not populate original `review`
+fields or turn `_human` metrics into AI-graded scores. The v1.6 labels remain
+drafts pending owner review. The earlier 22-case triage run and its AI review
+are archived separately; its later v1.1 owner approval is not extended to v1.6.
+Run folders use the original UTC start timestamp, so publication order remains
+clear without overwriting a file called current-development. Raw run metadata
+and dataset hashes are preserved rather than backdated.
 
 Each result includes an initially empty `review` object. A reviewer can supply
 their name, `unsupported_claims`, `follow_up_relevant`, and notes after comparing
@@ -338,7 +512,7 @@ Regenerate reports from annotated results without API calls:
 Dataset and split must match the saved run. Review changes to result JSON are
 picked up when reports regenerate; chatbot calls are not repeated.
 The preserved v1.0 baseline cannot be regenerated against the v1.1 dataset. Its
-original labels are archived in `docs/evaluations/triage-cases-v1.json` for audit;
+original labels are archived in `docs/evaluations/2026-10-21_101221_initial-development/dataset.json` for audit;
 the current runner requires the new contact-catalog version field. Run a fresh
 development evaluation after reviewing the revised draft labels instead of
 overwriting or relabelling that historical baseline.

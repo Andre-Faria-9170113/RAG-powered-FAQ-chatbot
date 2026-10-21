@@ -66,7 +66,7 @@ Generated local vector data is stored in `.chroma/` and ignored by git.
 ## Conversation flow
 
 The first structured LLM call validates the request in context, classifies its
-category, and resolves follow-ups into a standalone question. Both embedding
+category and urgency, and resolves follow-ups into a standalone question. Both embedding
 search and lexical search use that resolved question. A rejected or genuinely
 ambiguous request returns before indexing or embedding. The answer uses retrieved FAQs as evidence;
 conversation history only helps interpret the request.
@@ -77,8 +77,17 @@ official contact-topic keys plus `indeterminado` for an unknown topic and
 `fora_ambito` for rejected requests. A known payment/ad topic can still require
 clarification. Category appears in response details, including early replies,
 and fresh evaluations score `category_accuracy` against the existing labels.
-Historical runs without category predictions remain N/A; urgency is not yet
-classified.
+Historical runs without category predictions remain N/A.
+
+The same call returns `urgency` (`low`, `normal`, `high`, `unknown`, or
+`not_applicable`) and a short `urgency_reason`. These appear in response details
+and fresh reports. Urgency is independent of action: high can need essential
+clarification, and normal can need human support. It does not assign a support
+queue, promise faster service or add a model call. See [urgency](docs/evaluation.md#urgency-assessment)
+for the policy and urgency labels now merged into the main evaluation set.
+The original approved dataset and focused urgency set are preserved as snapshots;
+the expanded dataset awaits label approval. The current published baseline
+includes urgency assessments; older baselines remain unchanged in the archive.
 
 Answer generation also receives the original message so a search rewrite cannot
 discard troubleshooting already attempted or a request for human intervention.
@@ -115,10 +124,18 @@ differences from the brief and course references.
 
 ## Triage evaluation
 
-`data/evaluations/triage_cases.json` contains 34 synthetic Portuguese support
-cases: 22 development cases and 12 holdout cases. Label approval and its named
-owner are recorded in `label_status` and `reviewed_by`; this is distinct from
+`data/evaluations/triage_cases.json` v1.6 contains 45 synthetic Portuguese support
+cases: 31 development and 14 holdout cases, all named `case-NN` and explicitly
+labelled for urgency. The original 12 holdout questions and other expectations are unchanged;
+the two additions are new scenarios, not promoted development cases.
+The expanded set is a draft pending approval of its
+new labels; the original 34-case owner-reviewed v1.1 is archived under
+`docs/evaluations/datasets/triage-cases-v1.1-reviewed.json`. Label approval is distinct from
 reviewing the chatbot's generated responses.
+
+The duplicate of `case-01` was removed, and v1.6 closes the numbering gap by
+shifting former `case-36` through `case-46` down one. IDs now run `case-01` through
+`case-45`. The misleading-urgency-wording test is now `case-39`.
 
 ```bash
 .venv/bin/python evaluate.py --dry-run
@@ -126,8 +143,9 @@ reviewing the chatbot's generated responses.
 ```
 
 Live evaluation makes paid API calls and generates JSON/Markdown reports using
-the current chatbot. Holdout is not run by default. Category accuracy is not yet
-measurable; triage decisions, contact routing and source selection are scored.
+the current chatbot. Holdout is not run by default. Category accuracy, triage
+decisions, contact routing and source selection are scored. Urgency accuracy and
+high-urgency recall use only cases with explicit urgency labels.
 Factual support and clarification quality have separate human-review fields.
 New reports also include per-case/stage token usage and latency, mean/p95 case
 latency, and estimated EUR cost using the dated model prices and ECB conversion in
@@ -136,7 +154,9 @@ N/A; the historical baseline has no retroactively invented token/cost numbers.
 
 See [the evaluation guide](docs/evaluation.md) for metric definitions, label
 review, report regeneration and reproducibility details.
-The [published baselines](docs/evaluations/README.md) include the current run-07
-results, its exact dataset snapshot and an explicitly AI-authored qualitative
-review, alongside the unchanged historical v1.0 baseline. Execution-time approval
-metadata is preserved rather than backdated; the holdout split remains unused.
+The [published baselines](docs/evaluations/README.md) are organized into UTC-dated
+run folders. The current publication is `development-run-01`: 31 development
+cases, its exact dataset/evidence snapshots and an explicitly AI-authored
+qualitative review. The earlier triage and initial baselines remain archived
+with unchanged raw reports and dataset bytes. Execution-time approval metadata
+is preserved rather than backdated; the holdout split remains unused.

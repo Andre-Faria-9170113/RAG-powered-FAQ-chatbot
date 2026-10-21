@@ -1,8 +1,8 @@
-# Current development baseline: qualitative review
+# Triage development baseline: qualitative review
 
 Reviewer: **Codex (AI)**. Review date: **2026-10-21**.
 This is the requested case-by-case assessment, not independent human validation.
-The [structured review](current-development-review.json) contains all judgments
+The [structured review](review.json) contains all judgments
 and provenance checks. Original `review` fields and `_human` metrics are unchanged.
 
 ## Verdict
@@ -85,10 +85,10 @@ them into any future user-facing workflow.
 
 ## Provenance and publication
 
-The published [JSON](current-development.json) and [Markdown](current-development.md)
+The published [JSON](report.json) and [Markdown](report.md)
 are byte-for-byte copies of `development-triage-07-codex`. Their original UTC run
 time, model/settings, prices, FX rate, measurements, metadata and pending human
-reviews are preserved. The matching [dataset snapshot](triage-cases-v1.1-run-07.json)
+reviews are preserved. The matching [dataset snapshot](dataset.json)
 has the exact SHA-256 recorded in that run.
 
 The working dataset has since been approved by **André Faria**. I verified that

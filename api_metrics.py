@@ -26,7 +26,8 @@ def validation_issues(error: Exception) -> list[ValidationIssue]:
         return []
     codes = {
         "clarification_rejected", "early_reply_missing", "early_question_present",
-        "retrieval_question_missing", "category_scope_mismatch", "escalation_destination_missing",
+        "retrieval_question_missing", "category_scope_mismatch", "urgency_scope_mismatch",
+        "urgency_reason_missing", "string_too_short", "escalation_destination_missing",
         "escalation_user_info", "non_escalation_destination", "clarification_detail_missing",
         "answer_information_gaps", "missing", "string_type", "list_type",
         "literal_error", "bool_type", "bool_parsing", "extra_forbidden", "json_invalid",
@@ -35,7 +36,7 @@ def validation_issues(error: Exception) -> list[ValidationIssue]:
     fields = {
         "is_valid_question", "suggested_response", "standalone_question", "needs_clarification",
         "action", "sources", "topics", "confidence_score", "missing_info", "missing_knowledge",
-        "relevant_contact_form", "chunk_id", "question", "category",
+        "relevant_contact_form", "chunk_id", "question", "category", "urgency", "urgency_reason",
     }
     return [
         ValidationIssue(

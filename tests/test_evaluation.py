@@ -6,7 +6,7 @@ from unittest.mock import Mock
 
 from pydantic import ValidationError
 
-from chat_bot import AnswerSource, CONTACT_FORMS, FAQResponse, QuestionValidation
+from chat_bot import AnswerSource, CONTACT_FORMS, FAQResponse, QuestionValidation, RequestUrgency
 from evaluate import (
     CaseResult,
     EvaluationCase,
@@ -46,12 +46,16 @@ def case(case_id="example", action="answer", **updates) -> EvaluationCase:
     return EvaluationCase(**(values | updates))
 
 
+URGENCY_CASES = Path(__file__).resolve().parents[1] / "docs" / "evaluations" / "datasets" / "urgency-cases-v1.0.json"
+REVIEWED_CASES = Path(__file__).resolve().parents[1] / "docs" / "evaluations" / "datasets" / "triage-cases-v1.1-reviewed.json"
+
+
 class DatasetTest(unittest.TestCase):
     def test_shipped_dataset_covers_all_ten_destinations(self) -> None:
         dataset = load_dataset()
-        self.assertEqual(len(dataset.cases), 34)
-        self.assertEqual(sum(c.split == "development" for c in dataset.cases), 22)
-        self.assertEqual(sum(c.split == "holdout" for c in dataset.cases), 12)
+        self.assertEqual(len(dataset.cases), 45)
+        self.assertEqual(sum(c.split == "development" for c in dataset.cases), 31)
+        self.assertEqual(sum(c.split == "holdout" for c in dataset.cases), 14)
         self.assertEqual(
             {c.expected_contact_form for c in dataset.cases if c.expected_action == "escalate"},
             set(CONTACT_FORMS),
@@ -68,10 +72,10 @@ class DatasetTest(unittest.TestCase):
                 load_dataset(path)
 
     def test_historical_baseline_retains_its_exact_dataset(self) -> None:
-        directory = DATASET_PATH.parents[2] / "docs" / "evaluations"
-        baseline = json.loads((directory / "baseline-development.json").read_text())
+        directory = DATASET_PATH.parents[2] / "docs" / "evaluations" / "2026-10-21_101221_initial-development"
+        baseline = json.loads((directory / "report.json").read_text())
         self.assertEqual(
-            file_hash(directory / "triage-cases-v1.json"),
+            file_hash(directory / "dataset.json"),
             baseline["metadata"]["dataset_sha256"],
         )
 
@@ -100,10 +104,10 @@ class EvaluationTest(unittest.TestCase):
             case("failed"),
         ]
         validations = [
-            QuestionValidation(is_valid_question=True, category="problemas_anuncios", suggested_response="", standalone_question="Pergunta"),
-            QuestionValidation(is_valid_question=True, category="pagamentos_servicos", needs_clarification=True, suggested_response="O que aconteceu?"),
-            QuestionValidation(is_valid_question=False, category="fora_ambito", suggested_response="Recusa"),
-            QuestionValidation(is_valid_question=True, category="outros", suggested_response="", standalone_question="Pergunta"),
+            QuestionValidation(is_valid_question=True, category="problemas_anuncios", urgency="low", urgency_reason="Informação.", suggested_response="", standalone_question="Pergunta"),
+            QuestionValidation(is_valid_question=True, category="pagamentos_servicos", urgency="unknown", urgency_reason="Falta impacto.", needs_clarification=True, suggested_response="O que aconteceu?"),
+            QuestionValidation(is_valid_question=False, category="fora_ambito", urgency="not_applicable", urgency_reason="Recusa.", suggested_response="Recusa"),
+            QuestionValidation(is_valid_question=True, category="outros", urgency="normal", urgency_reason="Problema concreto.", suggested_response="", standalone_question="Pergunta"),
         ]
         results = [
             CaseResult(case_id=sample.id, inferred_action=sample.expected_action, validation=validation.model_dump())
@@ -227,7 +231,7 @@ class EvaluationTest(unittest.TestCase):
             missing_knowledge=["Cannot investigate server logs."],
         )
         result = run_case(sample, Mock(), answer_fn=Mock(return_value=(answer.suggested_response, answer,
-                          QuestionValidation(is_valid_question=True, category="problemas_tecnicos", suggested_response="", standalone_question=sample.question))))
+                          QuestionValidation(is_valid_question=True, category="problemas_tecnicos", urgency="normal", urgency_reason="Problema concreto.", suggested_response="", standalone_question=sample.question))))
         payload = {
             "metadata": {"started_at_utc": "new-run", "split": "development",
                          "generation_model": "test-model", "triage_decision_version": 2},
@@ -244,7 +248,7 @@ class EvaluationTest(unittest.TestCase):
         self.assertIn("Missing knowledge or capabilities", markdown)
 
     def test_explicit_action_is_independent_of_confidence_and_knowledge_gaps(self) -> None:
-        valid = QuestionValidation(is_valid_question=True, category="problemas_anuncios", suggested_response="", standalone_question="Example request")
+        valid = QuestionValidation(is_valid_question=True, category="problemas_anuncios", urgency="normal", urgency_reason="Problema concreto.", suggested_response="", standalone_question="Example request")
         for confidence in ("low", "medium", "high"):
             answer = faq_answer(
                 action="escalate", confidence_score=confidence,
@@ -259,15 +263,16 @@ class EvaluationTest(unittest.TestCase):
         clarification = QuestionValidation(
             is_valid_question=True, needs_clarification=True,
             category="indeterminado",
+            urgency="unknown", urgency_reason="Falta impacto.",
             suggested_response="A que opção se refere?",
         )
-        rejection = QuestionValidation(is_valid_question=False, category="fora_ambito", suggested_response="Só respondo sobre o website.")
+        rejection = QuestionValidation(is_valid_question=False, category="fora_ambito", urgency="not_applicable", urgency_reason="Recusa.", suggested_response="Só respondo sobre o website.")
         self.assertEqual(infer_action(clarification, None), "clarify")
         self.assertEqual(infer_action(rejection, None), "reject")
 
     def test_run_case_does_not_send_gold_labels_to_the_chatbot(self) -> None:
         sample = case(history=[{"role": "user", "content": "Earlier request"}])
-        validation = QuestionValidation(is_valid_question=True, category="problemas_anuncios", suggested_response="", standalone_question=sample.question)
+        validation = QuestionValidation(is_valid_question=True, category="problemas_anuncios", urgency="low", urgency_reason="Informação.", suggested_response="", standalone_question=sample.question)
         answer_fn = Mock(return_value=("Example response", faq_answer(), validation))
         client = Mock()
         result = run_case(sample, client, answer_fn=answer_fn)
@@ -361,6 +366,148 @@ class EvaluationTest(unittest.TestCase):
         self.assertIn("Category accuracy is N/A", report)
         self.assertIn("Runtime errors: 1", report)
         self.assertIn(sample.rubric, report)
+
+
+class UrgencyEvaluationTest(unittest.TestCase):
+    def test_frozen_urgency_dataset_and_reviewed_snapshot_keep_original_hashes(self):
+        dataset = load_dataset(URGENCY_CASES)
+        self.assertEqual(dataset.label_status, "draft_for_human_review")
+        self.assertIsNone(dataset.reviewed_by)
+        self.assertEqual(len(dataset.cases), 12)
+        self.assertEqual({case.expected_urgency for case in dataset.cases}, set(RequestUrgency.__args__))
+        self.assertEqual(file_hash(URGENCY_CASES), "6d40dd79344aafb71b2bfaed87fbcc502ba16ff7dcfa4da799e023bc384c269c")
+        self.assertEqual(file_hash(REVIEWED_CASES), "1bc88889b039a0fa6f7293036bfbf83b24b638d556dd9ee359a4c986e540d373")
+        approved = load_dataset(REVIEWED_CASES)
+        self.assertEqual(approved.label_status, "human_reviewed")
+        self.assertTrue(all(case.expected_urgency is None for case in approved.cases))
+
+    def test_merged_dataset_deduplicates_and_preserves_existing_expectations_and_holdout(self):
+        merged = load_dataset()
+        original = load_dataset(REVIEWED_CASES)
+        urgency = load_dataset(URGENCY_CASES)
+        self.assertEqual(merged.version, "1.6")
+        self.assertEqual(merged.label_status, "draft_for_human_review")
+        self.assertIsNone(merged.reviewed_by)
+        self.assertEqual(len(merged.cases), 45)
+        self.assertEqual([case.id for case in merged.cases], [f"case-{index:02d}" for index in range(1, 46)])
+        by_id = {case.id: case for case in merged.cases}
+        self.assertNotIn("case-46", by_id)
+        self.assertEqual(by_id["case-01"].expected_urgency, "low")
+        self.assertIn("URGENTE!!!", by_id["case-39"].question)
+        for case in original.cases:
+            expected = case.model_dump()
+            expected["expected_urgency"] = by_id[case.id].expected_urgency
+            self.assertEqual(by_id[case.id].model_dump(), expected)
+        self.assertEqual([case.id for case in merged.cases[:34]], [case.id for case in original.cases])
+        self.assertEqual(
+            [case.model_dump(exclude={"expected_urgency"}) for case in merged.cases[:34] if case.split == "holdout"],
+            [case.model_dump(exclude={"expected_urgency"}) for case in original.cases if case.split == "holdout"],
+        )
+        self.assertNotIn("urgency-06", by_id)
+        self.assertNotIn("urgency-07", by_id)
+        retained = [case for case in urgency.cases if case.id not in {"urgency-01", "urgency-06", "urgency-07"}]
+        for index, case in enumerate(retained, start=35):
+            renamed = case.model_copy(update={"id": f"case-{index:02d}"})
+            self.assertEqual(by_id[renamed.id], renamed)
+        labelled = [case for case in merged.cases if case.expected_urgency is not None]
+        self.assertEqual(len(labelled), 45)
+        self.assertEqual(sum(case.split == "development" for case in labelled), 31)
+
+    def test_current_dataset_has_full_urgency_coverage_without_conflating_critical_and_high(self):
+        dataset = load_dataset()
+        by_id = {case.id: case for case in dataset.cases}
+        self.assertTrue(all(case.expected_urgency is not None for case in dataset.cases))
+        for case_id in ("case-04", "case-16", "case-18", "case-20", "case-28"):
+            with self.subTest(case_id=case_id):
+                self.assertEqual(by_id[case_id].expected_urgency, "normal")
+        self.assertTrue(by_id["case-30"].critical)
+        self.assertEqual(by_id["case-30"].expected_urgency, "low")
+        for case_id in ("case-11", "case-12", "case-13", "case-14", "case-15"):
+            self.assertEqual(by_id[case_id].expected_urgency, "unknown")
+        for case in dataset.cases:
+            self.assertEqual(case.expected_urgency == "not_applicable", case.expected_action == "reject")
+
+    def test_urgency_accuracy_covers_every_completed_case_in_each_current_split(self):
+        dataset = load_dataset()
+        for split, expected_total in (("development", 31), ("holdout", 14)):
+            with self.subTest(split=split):
+                cases = [case for case in dataset.cases if case.split == split]
+                results = [CaseResult(case_id=case.id, inferred_action="error") for case in cases]
+                metric = summarize(cases, results, urgency_assessment_enabled=True)["urgency_accuracy"]
+                self.assertEqual(metric, {"passed": 0, "total": expected_total, "rate": 0.0})
+
+    def test_new_urgency_holdouts_are_distinct_and_not_in_development(self):
+        dataset = load_dataset()
+        development = [case for case in dataset.cases if case.split == "development"]
+        holdout = [case for case in dataset.cases if case.id in {"case-44", "case-45"}]
+        self.assertEqual(len(holdout), 2)
+        self.assertTrue(all(case.split == "holdout" for case in holdout))
+        self.assertEqual({case.expected_urgency for case in holdout}, {"high", "low"})
+        self.assertTrue(all(case.expected_action == "escalate" for case in holdout))
+        self.assertFalse({case.question for case in holdout} & {case.question for case in development})
+
+    def test_urgency_labels_are_independent_of_actions_but_rejection_is_not_applicable(self):
+        for action, urgency in (("clarify", "high"), ("escalate", "normal"), ("reject", "not_applicable")):
+            sample = EvaluationCase(
+                id="sample", split="development", category="outros", question="Pedido",
+                expected_action=action, expected_urgency=urgency,
+                expected_contact_form="outros" if action == "escalate" else None, rubric="Teste",
+            )
+            self.assertEqual(sample.expected_urgency, urgency)
+        for action, urgency in (("clarify", "not_applicable"), ("reject", "high")):
+            with self.subTest(action=action), self.assertRaises(ValidationError):
+                EvaluationCase(id="bad", split="development", category="outros", question="Pedido",
+                               expected_action=action, expected_urgency=urgency, rubric="Teste")
+
+    def test_scoring_excludes_unlabeled_cases_and_counts_missing_predictions(self):
+        dataset = load_dataset(URGENCY_CASES)
+        cases = [dataset.cases[index] for index in (0, 2, 3, 5)]
+        cases.append(cases[0].model_copy(update={"id": "unlabeled", "expected_urgency": None}))
+        predictions = ("low", "normal", "high", None, "high")
+        results = [
+            CaseResult(
+                case_id=case.id, inferred_action="error" if urgency is None else "clarify",
+                validation={"is_valid_question": True, "suggested_response": "Pergunta",
+                            "urgency": urgency, "urgency_reason": "Impacto relatado."} if urgency else None,
+            )
+            for case, urgency in zip(cases, predictions)
+        ]
+        metrics = summarize(cases, results)
+        self.assertEqual(metrics["urgency_accuracy"], {"passed": 2, "total": 4, "rate": 0.5})
+        self.assertEqual(metrics["high_urgency_recall"], {"passed": 1, "total": 2, "rate": 0.5})
+
+    def test_new_run_errors_are_failures_and_old_runs_are_not_reassessed(self):
+        dataset = load_dataset(URGENCY_CASES)
+        sample = dataset.cases[2]
+        result = CaseResult(case_id=sample.id, inferred_action="error")
+        payload = {
+            "metadata": {"started_at_utc": "test", "split": "development", "generation_model": "test",
+                         "urgency_assessment_version": 1},
+            "results": [result.model_dump()],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "urgency"
+            write_reports(output, dataset, [sample], payload)
+        self.assertEqual(payload["metrics"]["urgency_accuracy"]["rate"], 0)
+        self.assertEqual(payload["metrics"]["high_urgency_recall"]["rate"], 0)
+        self.assertIsNone(summarize([sample], [result])["urgency_accuracy"])
+        markdown = render_report(dataset, [sample], payload)
+        self.assertIn("Expected urgency: `high`; predicted: `not recorded`", markdown)
+
+    def test_predictions_are_visible_without_inventing_labels(self):
+        dataset = load_dataset()
+        sample = dataset.cases[0].model_copy(update={"expected_urgency": None})
+        result = CaseResult(
+            case_id=sample.id, inferred_action="answer",
+            validation={"is_valid_question": True, "suggested_response": "", "category": sample.category,
+                        "urgency": "low", "urgency_reason": "Pedido informativo sem problema ativo."},
+        )
+        self.assertIsNone(summarize([sample], [result])["urgency_accuracy"])
+        payload = {"metadata": {"started_at_utc": "test", "split": "development", "generation_model": "test"},
+                   "results": [result.model_dump()]}
+        markdown = render_report(dataset, [sample], payload)
+        self.assertIn("Expected urgency: `not labeled`; predicted: `low`", markdown)
+        self.assertIn(result.validation.urgency_reason, markdown)
 
 
 if __name__ == "__main__":

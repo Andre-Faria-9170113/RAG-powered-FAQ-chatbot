@@ -1,0 +1,157 @@
+{
+  "source_url": "https://www.custojusto.pt/ajuda-contacto",
+  "fetched_at_utc": "2026-10-21T11:24:53.618914+00:00",
+  "forms": [
+    {
+      "key": "problemas_anuncios",
+      "label": "Problemas com anúncios",
+      "section": "7",
+      "url": "https://www.custojusto.pt/ajuda-contacto?section=7",
+      "subjects": [
+        {
+          "value": "0",
+          "label": "Não consigo inserir o meu anúncio"
+        },
+        {
+          "value": "1",
+          "label": "O meu anúncio foi recusado por duplicado"
+        },
+        {
+          "value": "2",
+          "label": "O meu anúncio foi recusado"
+        },
+        {
+          "value": "3",
+          "label": "Não consigo eliminar o meu anúncio"
+        },
+        {
+          "value": "4",
+          "label": "Não encontro o meu anúncio no site"
+        }
+      ]
+    },
+    {
+      "key": "pagamentos_servicos",
+      "label": "Problemas com os serviços",
+      "section": "12",
+      "url": "https://www.custojusto.pt/ajuda-contacto?section=12",
+      "subjects": [
+        {
+          "value": "0",
+          "label": "Não vejo o serviço que comprei adicionado ao anúncio"
+        },
+        {
+          "value": "1",
+          "label": "Comprei o serviço montra mas não vejo o meu anúncio destacado"
+        },
+        {
+          "value": "2",
+          "label": "Comprei o serviço Subir mas não o encontro no topo da lista"
+        },
+        {
+          "value": "3",
+          "label": "Comprei o serviço Subir 7 mas não vejo o anúncio no topo da lista"
+        },
+        {
+          "value": "4",
+          "label": "Comprei um serviço e não recebi a factura"
+        }
+      ]
+    },
+    {
+      "key": "contactos_anuncios",
+      "label": "Contactos a anúncios",
+      "section": "6",
+      "url": "https://www.custojusto.pt/ajuda-contacto?section=6",
+      "subjects": [
+        {
+          "value": "0",
+          "label": "Não recebo os contactos de potenciais interessados nos meus anúncios"
+        },
+        {
+          "value": "1",
+          "label": "Como me posso assegurar de que o comprador é fiável?"
+        },
+        {
+          "value": "2",
+          "label": "Como me posso assegurar de que o vendedor é fiável?"
+        },
+        {
+          "value": "3",
+          "label": "Recebi um contacto suspeito"
+        },
+        {
+          "value": "4",
+          "label": "Necessito de um contacto de um anunciante"
+        }
+      ]
+    },
+    {
+      "key": "problemas_tecnicos",
+      "label": "Problemas técnicos",
+      "section": "8",
+      "url": "https://www.custojusto.pt/ajuda-contacto?section=8",
+      "subjects": [
+        {
+          "value": "0",
+          "label": "Tenho um problema técnico"
+        },
+        {
+          "value": "1",
+          "label": "Não consigo inserir imagens no anúncio"
+        }
+      ]
+    },
+    {
+      "key": "sugestoes",
+      "label": "Sugestões",
+      "section": "10",
+      "url": "https://www.custojusto.pt/ajuda-contacto?section=10",
+      "subjects": []
+    },
+    {
+      "key": "outros",
+      "label": "Outros",
+      "section": "11",
+      "url": "https://www.custojusto.pt/ajuda-contacto?section=11",
+      "subjects": []
+    },
+    {
+      "key": "imprensa_publicidade",
+      "label": "Imprensa e Publicidade",
+      "section": "14",
+      "url": "https://www.custojusto.pt/ajuda-contacto?section=14",
+      "subjects": [
+        {
+          "value": "0",
+          "label": "Contacto de Imprensa"
+        },
+        {
+          "value": "1",
+          "label": "Contacto para Publicidade"
+        }
+      ]
+    },
+    {
+      "key": "versao_mobile",
+      "label": "Versão mobile",
+      "section": "15",
+      "url": "https://www.custojusto.pt/ajuda-contacto?section=15",
+      "subjects": []
+    },
+    {
+      "key": "acesso_telefones",
+      "label": "Dificuldade de acesso aos telefones",
+      "section": "16",
+      "url": "https://www.custojusto.pt/ajuda-contacto?section=16",
+      "subjects": []
+    },
+    {
+      "key": "conta_utilizador",
+      "label": "Problemas com a conta de utilizador",
+      "section": "17",
+      "url": "https://www.custojusto.pt/ajuda-contacto?section=17",
+      "subjects": []
+    }
+  ]
+}

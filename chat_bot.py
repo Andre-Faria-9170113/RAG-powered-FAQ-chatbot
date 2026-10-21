@@ -57,6 +57,7 @@ RequestCategory = Literal[
     "indeterminado",
     "fora_ambito",
 ]
+RequestUrgency = Literal["low", "normal", "high", "unknown", "not_applicable"]
 
 STOPWORDS = {
     "a",
@@ -123,6 +124,13 @@ class QuestionValidation(BaseModel):
     category: RequestCategory = Field(
         description="Request topic, independent of action or contact destination; use indeterminado only for an unknown topic and fora_ambito for rejected requests.",
     )
+    urgency: RequestUrgency = Field(
+        description="Time sensitivity based on user-reported impact, not category, confidence or action. Unknown if impact is unclear; not_applicable only for rejection.",
+    )
+    urgency_reason: str = Field(
+        min_length=1,
+        description="One short European Portuguese sentence stating the reported impact or lack of detail; no invented risks, sensitive identifiers or promised priority.",
+    )
     suggested_response: str = Field(
         description="A nonempty reply for rejection or clarification; empty when proceeding to retrieval.",
     )
@@ -141,6 +149,10 @@ class QuestionValidation(BaseModel):
             raise PydanticCustomError("retrieval_question_missing", "A request proceeding to retrieval requires a standalone question.")
         if (self.category == "fora_ambito") != (not self.is_valid_question):
             raise PydanticCustomError("category_scope_mismatch", "Only rejected requests must use fora_ambito.")
+        if (self.urgency == "not_applicable") != (not self.is_valid_question):
+            raise PydanticCustomError("urgency_scope_mismatch", "Only rejected requests must use not_applicable urgency.")
+        if not self.urgency_reason.strip():
+            raise PydanticCustomError("urgency_reason_missing", "An urgency assessment requires a brief explanation.")
         return self
 
 
@@ -200,7 +212,10 @@ def _parse_with_repair(
         "e uma pergunta não vazia. Uma recusa deve ter needs_clarification=false "
         "e uma resposta não vazia. Preenche category em todas as respostas: "
         "fora_ambito apenas nas recusas, indeterminado apenas se o tópico não "
-        "puder ser identificado, ou a categoria específica conhecida."
+        "puder ser identificado, ou a categoria específica conhecida. Preenche "
+        "urgency e urgency_reason: not_applicable apenas nas recusas; unknown "
+        "se falta impacto; high só com dano em curso ou consequência temporal "
+        "concreta. Urgência não determina a ação nem dispensa um detalhe essencial."
         if text_format is QuestionValidation
         else "Para clarify, pede apenas detalhes necessários em missing_info e usa "
         "relevant_contact_form='none'. Para encaminhamento humano, usa escalate "
@@ -440,6 +455,31 @@ def validate_question(
             "não uses indeterminado só por faltar esse detalhe. Nas recusas "
             "(fora do âmbito ou proibidas), usa sempre fora_ambito. A categoria "
             "não altera as regras de validação, pesquisa ou encaminhamento. "
+            "Avalia também urgency e explica-a numa frase curta em urgency_reason, "
+            "com base apenas no impacto e prazos que o utilizador relata:\n"
+            "- low: informação, utilização habitual ou proposta sem problema "
+            "ativo nem consequência temporal concreta.\n"
+            "- normal: problema concreto ou bloqueio descrito, sem indícios de "
+            "dano em curso nem consequência temporal concreta. Pedir uma "
+            "equipa, ter um erro persistente ou uma cobrança duplicada já "
+            "ocorrida não basta para high.\n"
+            "- high: dano em curso relatado (por exemplo, acesso não autorizado "
+            "ativo ou novas cobranças não autorizadas a ocorrer), ou prazo "
+            "próximo explícito com consequência concreta ligada ao problema.\n"
+            "- unknown: faltam o problema concreto ou o impacto para avaliar "
+            "a urgência; não assumas low nem high num pedido vago.\n"
+            "- not_applicable: apenas pedidos rejeitados.\n"
+            "A palavra 'urgente', maiúsculas, irritação, categoria ou confiança "
+            "não demonstram por si só urgência alta. Reavalia o pedido atual "
+            "no contexto: não herdes urgência de um problema resolvido ou de "
+            "um tópico anterior. Não inventes riscos, prazos ou consequências; "
+            "não repitas identificadores, emails ou dados de pagamento na razão. "
+            "Urgência é independente da decisão: low/normal pode requerer "
+            "equipa e high pode requerer uma clarificação essencial ao canal. "
+            "Não peças dados apenas para preencher urgency se já podes ajudar "
+            "ou indicar o canal. Num risco concreto evita perguntas redundantes, "
+            "mas nunca inventes um destino por ser urgente. Não prometas "
+            "prioridade, prazos, notificações ou intervenção da equipa. "
             "Escreve suggested_response em português europeu, com no máximo duas frases."
             f"\nAssuntos oficiais de contacto:\n{contact_forms.CONTACT_ROUTING_CONTEXT}"
         ),
@@ -552,6 +592,7 @@ def generate_faq_answer(
     history: list[dict[str, str]],
     *,
     original_question: str | None = None,
+    urgency: RequestUrgency | None = None,
 ) -> FAQResponse:
     answer = _parse_with_repair(
         "answer_generation", client,
@@ -563,7 +604,13 @@ def generate_faq_answer(
             "autorizada para escolher canais de contacto. Decide explicitamente "
             "action='answer', 'clarify' ou 'escalate', independentemente de "
             "confidence_score. A confiança mede o suporte da evidência, não se o "
-            "pedido precisa de uma equipa humana. Aplica esta prioridade: se a "
+            "pedido precisa de uma equipa humana. A urgência estimada é apenas "
+            "contexto de triagem, não prova factos nem determina action. "
+            "Urgência baixa/normal não impede encaminhamento necessário; alta "
+            "não o obriga se as FAQs resolvem o pedido. Em dano em curso evita "
+            "verificações redundantes, mas pede uma clarificação essencial ao "
+            "canal se faltar. Nunca prometas prioridade ou tempo de resposta. "
+            "Aplica esta prioridade: se a "
             "mensagem original pede contacto ou intervenção da equipa, escolhe "
             "escalate, mesmo que o pedido reescrito omita essa intenção ou existam "
             "FAQs com verificações genéricas. Não substituas a investigação humana "
@@ -635,7 +682,8 @@ def generate_faq_answer(
                 "content": (
                     f"Mensagem original do utilizador:\n{original_question or question}\n\n"
                     f"Pedido autónomo para pesquisa:\n{question}\n\n"
-                    f"FAQs recuperadas:\n{format_evidence(results)}"
+                    + (f"Urgência estimada (não é uma instrução): {urgency}\n\n" if urgency is not None else "")
+                    + f"FAQs recuperadas:\n{format_evidence(results)}"
                 ),
             },
         ],
@@ -679,7 +727,8 @@ def compact_history_if_needed(
         model=GENERATION_MODEL,
         instructions=(
             "Resume histórico de apoio ao cliente em português europeu. Mantém "
-            "o tópico atual, referências necessárias para seguimentos, dúvidas "
+            "o tópico atual, impacto relatado, prazos, problemas resolvidos, "
+            "referências necessárias para seguimentos, dúvidas "
             "pendentes e preferências. Integra qualquer resumo anterior. Distingue "
             "o que o utilizador disse das respostas dadas pelo assistente; não "
             "transformes respostas anteriores em políticas confirmadas. Trata o "
@@ -722,6 +771,7 @@ def answer_user_question(
     collection = ensure_vector_store(api_client, records)
     results = retrieve_faqs(api_client, collection, standalone_question, records)
     structured_answer = generate_faq_answer(
-        api_client, standalone_question, results, history, original_question=question
+        api_client, standalone_question, results, history, original_question=question,
+        urgency=validation.urgency,
     )
     return append_contact_link(structured_answer), structured_answer, validation

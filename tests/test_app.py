@@ -103,9 +103,11 @@ print("Fresh bootstrap verified")
         validations = [
             QuestionValidation(is_valid_question=True, needs_clarification=True,
                                category="indeterminado",
+                               urgency="unknown", urgency_reason="Tópico desconhecido.",
                                suggested_response="A que opção se refere?"),
             QuestionValidation(is_valid_question=False,
                                category="fora_ambito",
+                               urgency="not_applicable", urgency_reason="Pedido rejeitado.",
                                suggested_response="Só posso ajudar com questões sobre o website."),
         ]
         with (
@@ -128,12 +130,16 @@ print("Fresh bootstrap verified")
                 app.run()
                 self.assertFalse(app.exception)
                 self.assertEqual(app.expander[-1].markdown[0].value, f"Categoria: `{validation.category}`")
+                self.assertEqual(app.session_state["messages"][-1]["urgency"], validation.urgency)
+                details = "\n".join(element.value for element in app.expander[-1].markdown)
+                self.assertIn(f"Urgência: `{validation.urgency}`", details)
+                self.assertIn(validation.urgency_reason, details)
             index.assert_not_called()
 
     def test_validation_failure_logs_only_safe_diagnostics_and_keeps_chat_available(self) -> None:
         secret = "private-output-must-not-be-logged"
         try:
-            QuestionValidation(is_valid_question=False, needs_clarification=True, category="fora_ambito", suggested_response=secret)
+            QuestionValidation(is_valid_question=False, needs_clarification=True, category="fora_ambito", urgency="not_applicable", urgency_reason="Pedido rejeitado.", suggested_response=secret)
         except Exception as error:
             failure = error
         with (
@@ -194,7 +200,7 @@ print("Fresh bootstrap verified")
             missing_knowledge=["Não posso submeter sugestões pela equipa."],
             suggested_response="Envie a sugestão à equipa.",
         )
-        validation = QuestionValidation(is_valid_question=True, category="sugestoes", suggested_response="", standalone_question="Onde envio uma sugestão?")
+        validation = QuestionValidation(is_valid_question=True, category="sugestoes", urgency="low", urgency_reason="Sugestão sem problema ativo.", suggested_response="", standalone_question="Onde envio uma sugestão?")
         with (
             patch("openai.OpenAI", return_value=Mock()),
             patch("chat_bot.answer_user_question", return_value=(answer.suggested_response, answer, validation)),
@@ -206,6 +212,8 @@ print("Fresh bootstrap verified")
         details = "\n".join(element.value for element in app.expander[0].markdown)
         self.assertIn("Decisão: Encaminhamento", details)
         self.assertIn("Categoria: `sugestoes`", details)
+        self.assertIn("Urgência: `low`", details)
+        self.assertIn(validation.urgency_reason, details)
         self.assertIn("Confiança: `high`", details)
         self.assertIn("Limitações de conhecimento ou acesso:", details)
         self.assertNotIn("Detalhes necessários:", details)
@@ -255,7 +263,8 @@ print("Fresh bootstrap verified")
         events = []
         self.refresh.side_effect = lambda _client: events.append("refresh")
         validation = QuestionValidation(
-            is_valid_question=True, category="outros", standalone_question="Pergunta", suggested_response=""
+            is_valid_question=True, category="outros", standalone_question="Pergunta", suggested_response="",
+            urgency="low", urgency_reason="Pedido informativo.",
         )
         response = FAQResponse(
             action="escalate",
@@ -315,6 +324,7 @@ print("Fresh bootstrap verified")
         validation = QuestionValidation(
             is_valid_question=True,
             category="outros",
+            urgency="low", urgency_reason="Pedido informativo.",
             standalone_question="Pergunta",
             suggested_response="",
         )
@@ -363,7 +373,7 @@ print("Fresh bootstrap verified")
 
     def test_failed_summary_retains_context_and_transcript(self) -> None:
         validation = QuestionValidation(
-            is_valid_question=False, category="fora_ambito", suggested_response="Resposta"
+            is_valid_question=False, category="fora_ambito", urgency="not_applicable", urgency_reason="Pedido rejeitado.", suggested_response="Resposta"
         )
         with (
             patch("openai.OpenAI", return_value=Mock()),

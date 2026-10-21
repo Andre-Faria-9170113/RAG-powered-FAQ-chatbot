@@ -15,6 +15,7 @@ from refresh_website_data import refresh as refresh_website_data
 from chat_bot import (
     FAQResponse,
     RequestCategory,
+    RequestUrgency,
     answer_user_question,
     compact_history_if_needed,
     conversation_history,
@@ -80,18 +81,24 @@ def render_message(message: dict) -> None:
         render_answer_details(
             FAQResponse.model_validate(details) if details else None,
             category=message.get("category"),
+            urgency=message.get("urgency"), urgency_reason=message.get("urgency_reason"),
         )
 
 
 def render_answer_details(
     answer: FAQResponse | None, *, category: RequestCategory | None = None,
+    urgency: RequestUrgency | None = None, urgency_reason: str | None = None,
 ) -> None:
-    if answer is None and category is None:
+    if answer is None and category is None and urgency is None:
         return
 
     with st.expander("Detalhes da resposta", expanded=False):
         if category is not None:
             st.write(f"Categoria: `{category}`")
+        if urgency is not None:
+            st.write(f"Urgência: `{urgency}`")
+            if urgency_reason:
+                st.write(f"Motivo: {urgency_reason}")
         if answer is None:
             return
         labels = {"answer": "Resposta", "clarify": "Clarificação", "escalate": "Encaminhamento"}
@@ -142,6 +149,8 @@ def answer_prompt(prompt: str) -> None:
     render_message({"role": "user", "content": prompt})
     failed = False
     category = None
+    urgency = None
+    urgency_reason = None
 
     with st.chat_message("assistant"):
         with st.spinner("A validar o pedido e a consultar as FAQs..."):
@@ -152,6 +161,8 @@ def answer_prompt(prompt: str) -> None:
                     client=cached_client(),
                 )
                 category = validation.category
+                urgency = validation.urgency
+                urgency_reason = validation.urgency_reason
             except Exception as error:
                 if isinstance(error, ValidationError):
                     LOGGER.error("Could not answer the current turn: %s", validation_issues(error))
@@ -168,7 +179,9 @@ def answer_prompt(prompt: str) -> None:
             st.error(answer)
         else:
             st.markdown(answer)
-            render_answer_details(structured_answer, category=category)
+            render_answer_details(
+                structured_answer, category=category, urgency=urgency, urgency_reason=urgency_reason,
+            )
 
     assistant_message = {"role": "assistant", "content": answer}
     if failed:
@@ -177,6 +190,8 @@ def answer_prompt(prompt: str) -> None:
         assistant_message["details"] = structured_answer.model_dump()
     if not failed:
         assistant_message["category"] = category
+        assistant_message["urgency"] = urgency
+        assistant_message["urgency_reason"] = urgency_reason
     st.session_state.messages.append(assistant_message)
 
     if failed:

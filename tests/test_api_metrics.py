@@ -203,10 +203,11 @@ def response_body(parsed, usage):
 
 class EvaluationUsageTest(unittest.TestCase):
     @patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"})
-    def test_sdk_repairs_missing_unknown_or_inconsistent_categories_without_retrieval(self):
+    def test_sdk_repairs_invalid_categories_and_urgency_without_retrieval(self):
         corrected = {
             "is_valid_question": True, "needs_clarification": True,
             "category": "pagamentos_servicos", "suggested_response": "O que aconteceu com o pagamento?",
+            "urgency": "unknown", "urgency_reason": "Falta impacto.",
             "standalone_question": "",
         }
         missing = {key: value for key, value in corrected.items() if key != "category"}
@@ -214,6 +215,10 @@ class EvaluationUsageTest(unittest.TestCase):
             (missing, "missing"),
             (corrected | {"category": "private-invalid-category"}, "literal_error"),
             (corrected | {"category": "fora_ambito"}, "category_scope_mismatch"),
+            ({key: value for key, value in corrected.items() if key != "urgency"}, "missing"),
+            (corrected | {"urgency": "private-invalid-urgency"}, "literal_error"),
+            (corrected | {"urgency": "not_applicable"}, "urgency_scope_mismatch"),
+            (corrected | {"urgency_reason": " "}, "urgency_reason_missing"),
         ):
             with self.subTest(code=code):
                 requests = []
@@ -239,6 +244,7 @@ class EvaluationUsageTest(unittest.TestCase):
                 self.assertEqual(result.api_calls[0].validation_issues[0].code, code)
                 self.assertIn(code, requests[1]["instructions"])
                 self.assertNotIn("private-invalid-category", requests[1]["instructions"])
+                self.assertNotIn("private-invalid-urgency", requests[1]["instructions"])
                 self.assertEqual(requests[0]["input"], requests[1]["input"])
                 index.assert_not_called()
 
@@ -261,6 +267,8 @@ class EvaluationUsageTest(unittest.TestCase):
         )
         for expected, parsed in scenarios:
             parsed["category"] = "indeterminado" if parsed["is_valid_question"] else "fora_ambito"
+            parsed["urgency"] = "unknown" if parsed["is_valid_question"] else "not_applicable"
+            parsed["urgency_reason"] = "Tópico desconhecido ou rejeitado."
             with self.subTest(expected=expected, parsed=parsed):
                 requests = []
 
@@ -299,8 +307,10 @@ class EvaluationUsageTest(unittest.TestCase):
         requests = []
         original = "E aquela opção, como funciona? private-user-context"
         invalid = {"is_valid_question": False, "needs_clarification": True,
+                   "urgency": "not_applicable", "urgency_reason": "Recusa.",
                    "category": "fora_ambito", "suggested_response": "private-model-output", "standalone_question": ""}
         corrected = {"is_valid_question": True, "needs_clarification": True,
+                     "urgency": "unknown", "urgency_reason": "Falta impacto.",
                      "category": "indeterminado", "suggested_response": "A que opção se refere?", "standalone_question": ""}
 
         def respond(request):
@@ -346,7 +356,7 @@ class EvaluationUsageTest(unittest.TestCase):
                 invalid = {"action": action, "confidence_score": "high", "suggested_response": "private-model-output",
                            "relevant_contact_form": route, "missing_info": missing, "missing_knowledge": [], "sources": [], "topics": []}
                 corrected = invalid | {"action": "escalate", "missing_info": [], "suggested_response": "Contacte a equipa."}
-                parsed = [{"is_valid_question": True, "needs_clarification": False, "category": route, "suggested_response": "", "standalone_question": sample.question}, invalid, corrected]
+                parsed = [{"is_valid_question": True, "needs_clarification": False, "category": route, "urgency": "normal", "urgency_reason": "Problema concreto.", "suggested_response": "", "standalone_question": sample.question}, invalid, corrected]
 
                 def respond(request):
                     requests.append(json.loads(request.content))
@@ -385,7 +395,7 @@ class EvaluationUsageTest(unittest.TestCase):
                     "usage": {"prompt_tokens": tokens, "total_tokens": tokens},
                 })
             if "Validas mensagens" in body["instructions"]:
-                parsed = {"is_valid_question": True, "category": "outros", "suggested_response": "", "standalone_question": "Example request", "needs_clarification": False}
+                parsed = {"is_valid_question": True, "category": "outros", "urgency": "normal", "urgency_reason": "Problema concreto.", "suggested_response": "", "standalone_question": "Example request", "needs_clarification": False}
                 inputs, cached, outputs = 1000, 0, 20
             else:
                 parsed = {"action": "escalate", "sources": [], "topics": [], "confidence_score": "low", "missing_info": [], "missing_knowledge": [], "relevant_contact_form": "outros", "suggested_response": "Contact support."}
@@ -437,6 +447,9 @@ class EvaluationUsageTest(unittest.TestCase):
                 self.assertIn("category", schema["required"])
                 self.assertEqual(set(schema["properties"]["category"]["enum"]), set(bot.RequestCategory.__args__))
                 self.assertNotIn("none", schema["properties"]["category"]["enum"])
+                self.assertIn("urgency", schema["required"])
+                self.assertIn("urgency_reason", schema["required"])
+                self.assertEqual(set(schema["properties"]["urgency"]["enum"]), set(bot.RequestUrgency.__args__))
         payload = {"metadata": run_metadata(load_dataset(), DATASET_PATH, "development"), "results": [cold.model_dump()]}
         report = render_report(load_dataset(), [sample], payload)
         self.assertIn("corpus_embedding", report)

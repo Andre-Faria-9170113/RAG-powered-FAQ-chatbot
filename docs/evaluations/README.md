@@ -1,126 +1,103 @@
-# Published evaluation baselines
+# Published Evaluation Baselines
 
-## Current development baseline
+## Publication Order
 
-The current published baseline is **development-triage-07-codex**, run on
-2026-10-21 against the 22 development cases in dataset v1.1. It is preserved as
-an inspectable measurement, including its known failures, not a production
-accuracy claim.
+Folders use **`YYYY-MM-DD_HHMMSS_run-name` in UTC**, from the report's original
+`started_at_utc`, not its publication time. Sorting folder names gives run order;
+no separate sequential counter is needed. New publications use this same layout.
+The latest publication is the current **development** baseline, not a production
+acceptance certificate.
 
-- [Full report](current-development.md) and [original raw results](current-development.json).
-- [Exact dataset used for that run](triage-cases-v1.1-run-07.json).
-- [Case-by-case qualitative review](current-development-review.md) and
-  [structured review judgments](current-development-review.json), authored by Codex (AI).
+| Run time (UTC) | Dataset / evaluated cases | Action accuracy | Artifacts |
+|---|---|---:|---|
+| 2026-10-21 18:14:09 | v1.6 / 31 development | 31/31 | **Current:** [report](2026-10-21_181409_development-run-01/report.md), [raw JSON](2026-10-21_181409_development-run-01/report.json), [AI review](2026-10-21_181409_development-run-01/review.md), [dataset](2026-10-21_181409_development-run-01/dataset.json) |
+| 2026-10-21 15:03:29 | v1.1 / 22 development | 21/22 | [report](2026-10-21_150329_triage-development/report.md), [raw JSON](2026-10-21_150329_triage-development/report.json), [AI review](2026-10-21_150329_triage-development/review.md), [dataset](2026-10-21_150329_triage-development/dataset.json) |
+| 2026-10-21 10:12:21 | v1.0 / 20 development | 14/20 | [report](2026-10-21_101221_initial-development/report.md), [raw JSON](2026-10-21_101221_initial-development/report.json), [preserved AI notes](2026-10-21_101221_initial-development/notes.md), [dataset](2026-10-21_101221_initial-development/dataset.json) |
 
-| Automatic check | Current baseline |
+Case cohorts, prompts, response schemas and label coverage changed between runs.
+These aggregate percentages are not a controlled like-for-like comparison.
+Original source run names are retained in the reviews: the middle row is
+`development-triage-07-codex`, and the latest is `development-run-01`.
+
+## Current Development Baseline
+
+The latest run has **zero runtime errors**, all 31 expected actions and all 12
+required referral destinations correct. Other saved checks are:
+
+| Check | Result |
 |---|---:|
-| Action accuracy | 21/22 (95.5%) |
-| Escalation recall | 7/7 (100%) |
-| Correct escalation destination | 7/7 (100%) |
-| Answers when non-answer expected | 0/13 (0%) |
-| Expected source group coverage | 9/9 (100%) |
-| Answer citation ID validity | 9/9 (100%) |
-| Runtime errors | 0/22 |
-| Mean / p95 pipeline latency | 3.16 s / 4.53 s |
-| Provider-reported tokens | 67,079 |
-| Estimated cost, saved rates | EUR 0.02764002 |
+| Answers when non-answer expected | 0/20 (0%) |
+| Expected source-group coverage | 11/11 (100%) |
+| Answer citation ID validity | 11/11 (100%) |
+| Category accuracy | 27/31 (87.1%) |
+| Urgency accuracy | 30/31 (96.8%) |
+| High-urgency recall | 3/4 (75%) |
+| Mean / p95 case latency | 3.07 s / 5.62 s |
+| Recorded API calls / total tokens | 77 / 117,281 |
+| Estimated cost, saved rates | EUR 0.04791415 |
 
-The qualitative AI review found **12 acceptable outputs, 7 acceptable with
-notes, and 3 needing changes**: overly broad policy advice in case-07, premature
-escalation in case-13, and an unsupported forwarding promise in case-18. Correct
-routes can still carry irrelevant citations. The review also distinguishes
-ignored internal validation text from what the user actually sees.
+The [qualitative AI review](2026-10-21_181409_development-run-01/review.md) rates
+**18 acceptable, 9 acceptable with notes, and 4 needing changes**. Main issues:
+corrupted output in case-03, refund-presupposing wording in case-18, an unsupported
+staff-access claim in case-35, and category/urgency errors in case-40.
+Several referrals also carry irrelevant citations. Correct action/routing scores
+do not establish that every answer is grounded or readable.
 
-The dataset owner has since approved the labels as **André Faria**. Only approval
-metadata changed; all case content is identical to the archived run snapshot.
-The original report retains its execution-time `draft_for_human_review` status
-and dataset hash. Dataset-label approval does not make the AI response review an
-independent human review. Human-review metrics therefore remain N/A.
+All v1.6 labels remain **drafts pending human review**. The AI judgments do not
+populate raw human-review fields or change `_human` metrics from N/A. The 14
+holdouts were not evaluated or used to tune prompts during publication.
+No paid model calls, live scrape or chatbot behavior changes were needed.
 
-Regenerate this preserved report without API calls using its matching snapshot:
+## Archive Layout
+
+Each run folder contains immutable `report.json`, `report.md` and `dataset.json`
+copies with their original timestamps, labels and hashes. A completed AI review
+adds `review.json` and `review.md`; the initial run only has preserved `notes.md`.
+The latest folder also freezes `faqs.json` and `contact_forms.json` as the evidence
+for its review. The complete retrieved FAQ set was not saved.
+
+The older raw reports and dataset bytes are unchanged by reorganization.
+The previous review's relative artifact references were updated for the new
+filenames; its case judgments, attribution, review date and source hashes remain
+unchanged. Historical report bodies may mention older feature status, which is
+not a description of today's implementation.
+
+Additional frozen datasets that are not attached to a published run live in
+`datasets/`:
+
+- [Owner-reviewed v1.1](datasets/triage-cases-v1.1-reviewed.json), matching
+  `development-category-01`. Relative to the run-07 dataset, only label approval
+  metadata changed. It does not extend owner approval to v1.6 or AI output reviews.
+- [Focused urgency v1.0](datasets/urgency-cases-v1.0.json), matching
+  `development-urgency-01`. This is a historical draft snapshot, not another
+  actively maintained dataset or an independent holdout.
+
+The active dataset remains `data/evaluations/triage_cases.json`. IDs above 34
+were renumbered when urgency cases were merged and a duplicate removed; use the
+matching snapshot, not present-day IDs, when inspecting historical runs.
+See [dataset ownership and ID mapping](../evaluation.md#dataset-and-label-ownership).
+
+## Offline Regeneration
+
+Use the exact dataset belonging to the report, without rewriting original files:
 
 ```bash
 .venv/bin/python evaluate.py --split development \
-  --cases docs/evaluations/triage-cases-v1.1-run-07.json \
-  --report-from docs/evaluations/current-development.json \
-  --output reports/current-development-regenerated
+  --cases docs/evaluations/2026-10-21_181409_development-run-01/dataset.json \
+  --report-from docs/evaluations/2026-10-21_181409_development-run-01/report.json \
+  --output reports/development-run-01-regenerated
 ```
 
-This requires the matching FAQ/contact content, as with other evaluations. A
-fresh run using the working dataset would record its new approval hash; do not
-change the old metadata to make those hashes appear identical. The 12-case
-holdout remains unrun. The smaller historical baseline below uses a different
-dataset/cohort and is not a controlled like-for-like comparison.
+The command requires matching FAQ/contact content, just like other evaluations.
+The latest publication freezes that evidence for audit; the runner still uses
+the working FAQ/contact files and stops if their normalized versions differ.
+The original v1.0 dataset predates the required contact-catalog field and cannot
+be passed directly to the current evaluator; its exact bytes are preserved for
+audit, not silently upgraded. Neither raw historical usage nor human judgments
+are invented during regeneration.
 
-## Historical development baseline (dataset v1.0)
-
-The [full report](baseline-development.md) and [raw results](baseline-development.json)
-record a live run of the 20 development cases on 2026-10-21 with the configured
-`gpt-4.1-mini` generation model. The 10 holdout cases have not been run.
-
-This run predates the ten-category contact catalog and dataset v1.1 (34 cases).
-The [original dataset](triage-cases-v1.json) is preserved byte-for-byte with the
-hash recorded in the results. The raw JSON and Markdown report are unchanged;
-they are not scores for today's prompts or expanded dataset. The run-07 baseline
-above records the current implementation. The current holdout has 12 cases and
-remains unrun.
-
-New evaluation runs record per-call token usage and estimated EUR costs (with
-underlying USD estimates retained in JSON). This
-historical run did not capture usage: its latency remains valid, but token/cost
-figures cannot be backfilled from the saved responses.
-
-Labels remain assistant-authored drafts for review by the project owner. The
-following are descriptive measurements for this one run, not a course grade or
-an estimate of production accuracy. No chatbot prompts or behavior were changed
-while establishing this baseline.
-
-| Automatic check | Baseline |
-|---|---:|
-| Structured action agreement | 14/20 (70%) |
-| Required escalation branch selected | 1/5 (20%) |
-| Required escalation branch and destination correct | 1/5 (20%) |
-| Answer branch when non-answer expected | 1/11 (9.1%) |
-| Expected cited FAQ groups covered | 8/9 (88.9%) |
-| Answer outputs with known, nonempty citation IDs | 9/9 (100%) |
-| Runtime errors | 0/20 |
-| Mean / p95 elapsed pipeline latency | 2.82 s / 4.75 s |
-
-Category classification, unsupported factual claims, and follow-up relevance
-are not scored automatically. The latter two need a named review of the text
-and evidence. All human-review judgments remain pending in the raw results.
-
-### Observations from the historical run
-
-These observations are an assistant analysis of outputs, not completed human
-review annotations:
-
-- **case-05:** asks which classifieds website the user means instead of
-  consulting the saved-search FAQ. The expected answer is in `faq-030`.
-- **case-11:** the response correctly asks which option the user means, but
-  `is_valid_question=false` causes the adapter to infer reject. The automatic
-  mismatch here is a flag/text disagreement, not proof that the question shown
-  to the user was inappropriate.
-- **case-16:** changes a request for manual review of a rejected ad into generic
-  editing instructions and a clarification. The model uses `missing_info` to
-  describe missing corpus knowledge, not a detail the user could supply.
-- **case-17:** the response provides a support email, but confidence is high and
-  the application does not append the selected technical-support form. The
-  adapter therefore records answer. Do not interpret the 20% escalation result
-  as proving that only 20% of responses mention any support channel.
-- **case-19:** asks the user to reconfirm details they said they already checked,
-  rather than passing the unresolved delivery issue to the requested team.
-- **case-21:** rejects a complaint about customer support, although the expected
-  policy routes it to `outros`. The intended scope needs to be explicit.
-
-The new-chat follow-up (case-26) and explicit topic change (case-28) match their
-expected answer actions and cite their expected FAQ groups in this run.
-
-The current implementation now has explicit answer/clarify/escalate decisions
-and separates missing user information from missing knowledge/capabilities.
-Escalation links use that decision rather than confidence. Those changes postdate
-this baseline: its saved decisions and scores are unchanged. A dedicated request
-category prediction is still pending.
-
-See [the evaluation guide](../evaluation.md) for commands, metric definitions,
-limitations, and how to enter human judgments without making more API calls.
+The earlier triage baseline has seven required escalation destinations, 67,079
+tokens and an estimated EUR 0.02764002 cost. Its AI review identified premature
+payment escalation, broad character-policy advice and a forwarding promise.
+The initial baseline did not record usage; its token/cost metrics remain N/A.
+See [the evaluation guide](../evaluation.md) for metric definitions and review limits.

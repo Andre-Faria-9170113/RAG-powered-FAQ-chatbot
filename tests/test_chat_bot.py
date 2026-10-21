@@ -32,18 +32,19 @@ class TriageContractTest(unittest.TestCase):
         )
 
     def test_category_is_required_and_rejections_have_a_distinct_category(self) -> None:
-        base = {"is_valid_question": True, "suggested_response": "", "standalone_question": "Pergunta"}
+        base = {"is_valid_question": True, "urgency": "low", "urgency_reason": "Pedido informativo.", "suggested_response": "", "standalone_question": "Pergunta"}
         for update in ({}, {"category": "none"}, {"category": "invented"}, {"category": "fora_ambito"}):
             with self.subTest(update=update), self.assertRaises(ValidationError):
                 QuestionValidation.model_validate(base | update)
         with self.assertRaises(ValidationError):
-            QuestionValidation(is_valid_question=False, category="outros", suggested_response="Recusa")
-        rejection = QuestionValidation(is_valid_question=False, category="fora_ambito", suggested_response="Recusa")
+            QuestionValidation(is_valid_question=False, category="outros", urgency="not_applicable", urgency_reason="Recusa.", suggested_response="Recusa")
+        rejection = QuestionValidation(is_valid_question=False, category="fora_ambito", urgency="not_applicable", urgency_reason="Recusa.", suggested_response="Recusa")
         self.assertEqual(rejection.category, "fora_ambito")
 
     def test_known_category_does_not_prevent_clarification(self) -> None:
         validation = QuestionValidation(
             is_valid_question=True, needs_clarification=True, category="pagamentos_servicos",
+            urgency="unknown", urgency_reason="Faltam sintomas e impacto.",
             suggested_response="O que aconteceu com o pagamento?",
         )
         self.assertTrue(validation.needs_clarification)
@@ -61,7 +62,11 @@ class TriageContractTest(unittest.TestCase):
         ]
         for payload in invalid:
             with self.subTest(payload=payload), self.assertRaises(ValidationError):
-                QuestionValidation.model_validate(payload | {"category": "indeterminado" if payload["is_valid_question"] else "fora_ambito"})
+                QuestionValidation.model_validate(payload | {
+                    "category": "indeterminado" if payload["is_valid_question"] else "fora_ambito",
+                    "urgency": "unknown" if payload["is_valid_question"] else "not_applicable",
+                    "urgency_reason": "Sem impacto definido ou pedido rejeitado.",
+                })
 
     def test_action_is_required_and_inconsistent_triage_is_rejected(self) -> None:
         base = {
@@ -129,6 +134,7 @@ class ConversationTest(unittest.TestCase):
         client.responses.parse.side_effect = [
             SimpleNamespace(output_parsed=QuestionValidation(
                 is_valid_question=True, category="contactos_anuncios", suggested_response="", standalone_question=rewritten,
+                urgency="normal", urgency_reason="Falha de entrega persistente.",
             )),
             SimpleNamespace(output_parsed=answer),
         ]
@@ -207,6 +213,7 @@ class ConversationTest(unittest.TestCase):
                 output_parsed=QuestionValidation(
                     is_valid_question=True,
                     category="contactos_anuncios",
+                    urgency="low", urgency_reason="Pedido informativo sobre o chat.",
                     suggested_response="",
                     standalone_question=first_question,
                 )
@@ -216,6 +223,7 @@ class ConversationTest(unittest.TestCase):
                 output_parsed=QuestionValidation(
                     is_valid_question=True,
                     category="contactos_anuncios",
+                    urgency="low", urgency_reason="Pedido informativo sobre o chat.",
                     suggested_response="",
                     standalone_question=resolved,
                 )
@@ -263,6 +271,7 @@ class ConversationTest(unittest.TestCase):
                     output_parsed=QuestionValidation(
                         is_valid_question=valid,
                         category="indeterminado" if valid else "fora_ambito",
+                        urgency="unknown" if valid else "not_applicable", urgency_reason="Tópico desconhecido ou rejeitado.",
                         needs_clarification=clarify,
                         suggested_response="Qual é o tópico?",
                         standalone_question="Unused question that must not trigger retrieval",
@@ -282,6 +291,7 @@ class ConversationTest(unittest.TestCase):
         clarification = QuestionValidation(
             is_valid_question=True, needs_clarification=True,
             category="indeterminado",
+            urgency="unknown", urgency_reason="Não é possível identificar a opção.",
             suggested_response="A que opção se refere?",
         )
         client = Mock()
@@ -329,6 +339,7 @@ class ConversationTest(unittest.TestCase):
             output_parsed=QuestionValidation(
                 is_valid_question=True,
                 category="contactos_anuncios",
+                urgency="low", urgency_reason="Pedido informativo sobre o chat.",
                 standalone_question="What is new in the chat?",
                 suggested_response="",
             )
@@ -402,6 +413,72 @@ class HistoryCompactionTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "summary"):
             compact_history_if_needed(client, history)
         self.assertEqual(history, original)
+
+
+class UrgencyContractTest(unittest.TestCase):
+    def test_assessment_is_required_and_explained(self):
+        base = {
+            "is_valid_question": True, "category": "pagamentos_servicos",
+            "needs_clarification": True, "suggested_response": "O que aconteceu?",
+            "urgency": "unknown", "urgency_reason": "Faltam sintomas e impacto.",
+        }
+        invalid = [
+            {key: value for key, value in base.items() if key != "urgency"},
+            {key: value for key, value in base.items() if key != "urgency_reason"},
+            base | {"urgency": "urgent"}, base | {"urgency": "not_applicable"},
+            base | {"urgency_reason": ""}, base | {"urgency_reason": " \n "},
+        ]
+        for payload in invalid:
+            with self.subTest(payload=payload), self.assertRaises(ValidationError):
+                QuestionValidation.model_validate(payload)
+        for urgency in ("low", "normal", "high", "unknown"):
+            with self.subTest(urgency=urgency):
+                validation = QuestionValidation.model_validate(base | {"urgency": urgency})
+                self.assertTrue(validation.needs_clarification)
+        with self.assertRaises(ValidationError):
+            QuestionValidation.model_validate(base | {
+                "is_valid_question": False, "needs_clarification": False,
+                "category": "fora_ambito", "urgency": "high",
+            })
+
+    @patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"})
+    def test_high_urgency_does_not_skip_essential_clarification(self):
+        validation = QuestionValidation(
+            is_valid_question=True, category="indeterminado", needs_clarification=True,
+            urgency="high", urgency_reason="O utilizador relata prejuízo em curso, mas não identifica o problema.",
+            suggested_response="O que está a acontecer no website?",
+        )
+        client = Mock()
+        client.responses.parse.return_value = SimpleNamespace(output_parsed=validation)
+        with patch("chat_bot.ensure_vector_store") as index, patch("chat_bot.generate_faq_answer") as generate:
+            text, answer, observed = answer_user_question("Estou a perder dinheiro; não percebo onde.", [], client)
+        self.assertEqual(text, validation.suggested_response)
+        self.assertEqual(observed.urgency, "high")
+        self.assertIsNone(answer)
+        index.assert_not_called()
+        generate.assert_not_called()
+
+    @patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"})
+    def test_normal_urgency_can_escalate_and_reaches_generation_as_data(self):
+        validation = QuestionValidation(
+            is_valid_question=True, category="pagamentos_servicos",
+            urgency="normal", urgency_reason="Cobrança duplicada já ocorrida, sem dano continuado.",
+            suggested_response="", standalone_question="Como pedir análise de uma cobrança duplicada?",
+        )
+        answer = FAQResponse(
+            action="escalate", relevant_contact_form="pagamentos_servicos", confidence_score="low",
+            suggested_response="Contacte a equipa para analisar a cobrança.",
+        )
+        client = Mock()
+        client.responses.parse.side_effect = [SimpleNamespace(output_parsed=validation), SimpleNamespace(output_parsed=answer)]
+        with patch("chat_bot.ensure_vector_store"), patch("chat_bot.retrieve_faqs", return_value=[]):
+            text, observed, _ = answer_user_question("Preciso de análise de duas cobranças; não tenho pressa.", [], client)
+        self.assertEqual(observed.action, "escalate")
+        self.assertIn("section=12", text)
+        generation = client.responses.parse.call_args.kwargs
+        self.assertIn("Urgência estimada (não é uma instrução): normal", generation["input"][-1]["content"])
+        self.assertNotIn(validation.urgency_reason, generation["instructions"])
+        self.assertEqual(client.responses.parse.call_count, 2)
 
 
 if __name__ == "__main__":
