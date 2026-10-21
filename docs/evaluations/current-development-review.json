@@ -1,0 +1,213 @@
+{
+  "reviewer": "Codex",
+  "reviewer_type": "ai",
+  "reviewed_at_utc": "2026-10-21T16:00:13Z",
+  "independent_human_review": false,
+  "assessment": "suitable_as_development_baseline_with_known_issues",
+  "source_run": "development-triage-07-codex",
+  "source_report": "current-development.json",
+  "source_report_sha256": "095649a5bb2a7cc9e9ad1ee7d985a61ea60958227931673c07d1a23c1f3e2815",
+  "source_markdown": "current-development.md",
+  "source_markdown_sha256": "286adc72512f18056bacc47f2825ca6a9deeb57ac12a9cf741bdcd00ec2fb3fe",
+  "dataset_snapshot": "triage-cases-v1.1-run-07.json",
+  "dataset_sha256": "a34c3450f9283562720f13c5d9a576eacb836ca6b3cb02df049faf8e4cc0e3f5",
+  "approval_at_review": {
+    "current_dataset_sha256": "1bc88889b039a0fa6f7293036bfbf83b24b638d556dd9ee359a4c986e540d373",
+    "label_status": "human_reviewed",
+    "reviewed_by": "André Faria",
+    "changes_since_run": ["label_status", "reviewed_by"],
+    "case_content_unchanged": true,
+    "note": "Owner approval applies to dataset labels, not these AI-authored response judgments. The original run metadata remains unchanged."
+  },
+  "scope": [
+    "All 22 saved development responses and their case rubrics/history",
+    "Cited FAQ evidence, with additional pinned-corpus checks where relevant",
+    "Pinned contact catalog and exact recommended URLs",
+    "Structured decisions, validation metadata, usage, latency and cost arithmetic"
+  ],
+  "limitations": [
+    "This is a qualitative AI review, not independent human validation or a production accuracy estimate.",
+    "The complete retrieved FAQ set was not saved. Citation gaps do not establish that a fact was absent from all retrieved evidence.",
+    "No live website scrape, paid model calls, new responses or holdout evaluation were performed.",
+    "Original human-review fields remain null and human-review metrics remain N/A."
+  ],
+  "verified": {
+    "original_dataset_hash": true,
+    "all_automatic_metrics_recomputed": true,
+    "complete_development_case_coverage": true,
+    "case_actions_match_saved_structured_decisions": true,
+    "all_cited_ids_and_question_labels_match_corpus": true,
+    "all_seven_required_escalation_urls_match_catalog": true,
+    "all_56_api_calls_have_complete_usage_and_pricing": true,
+    "saved_usd_eur_costs_recomputed_using_saved_rates": true,
+    "latency_mean_and_p95_recomputed": true,
+    "runtime_source_hashes_match_at_review": true,
+    "dataset_case_content_matches_owner_approved_copy": true
+  },
+  "summary": {
+    "reviewed_cases": 22,
+    "acceptable": 12,
+    "acceptable_with_notes": 7,
+    "needs_changes": 3,
+    "needs_changes_case_ids": ["case-07", "case-13", "case-18"],
+    "clarification_relevance_ai": {"passed": 2, "total": 2},
+    "citation_attention_case_ids": ["case-04", "case-06", "case-07", "case-13", "case-16", "case-17", "case-18", "case-21", "case-32"],
+    "ignored_internal_validation_claim_case_ids": ["case-16", "case-19", "case-21"]
+  },
+  "cases": [
+    {
+      "case_id": "case-01",
+      "outcome": "acceptable",
+      "citation_support": "supported",
+      "clarification_relevant": null,
+      "notes": "Correctly states that publication is free and there is no sales commission, matching faq-002. No paid-service confusion or invented account action."
+    },
+    {
+      "case_id": "case-02",
+      "outcome": "acceptable",
+      "citation_support": "supported",
+      "clarification_relevant": null,
+      "notes": "States 60 days and renewal for the same duration, matching faq-003."
+    },
+    {
+      "case_id": "case-03",
+      "outcome": "acceptable",
+      "citation_support": "supported",
+      "clarification_relevant": null,
+      "notes": "Directly identifies the personal area and Meus anúncios section, supported by faq-014."
+    },
+    {
+      "case_id": "case-04",
+      "outcome": "acceptable_with_notes",
+      "citation_support": "partial",
+      "clarification_relevant": null,
+      "notes": "The email-reset procedure matches faq-015 and does not ask for credentials or claim to change the password. The added login-screen location is more specific than that FAQ establishes; verify the location or avoid that extra UI detail."
+    },
+    {
+      "case_id": "case-05",
+      "outcome": "acceptable",
+      "citation_support": "supported",
+      "clarification_relevant": null,
+      "notes": "Correctly gives Guardar below the search bar and the limit of 20 saved searches, supported by faq-030."
+    },
+    {
+      "case_id": "case-06",
+      "outcome": "acceptable_with_notes",
+      "citation_support": "partial",
+      "clarification_relevant": null,
+      "notes": "The requested chat features are supported by faq-051/faq-056. Automatic rollout and access-as-usual are supported elsewhere in the pinned corpus by faq-052, but that FAQ is not cited. This is a citation-coverage issue, not evidence that the rollout claim was fabricated."
+    },
+    {
+      "case_id": "case-07",
+      "outcome": "needs_changes",
+      "citation_support": "partial",
+      "clarification_relevant": null,
+      "notes": "The core answer about HTML being prohibited and removed matches faq-008. It then adds general advice to avoid special characters in the ad text, which faq-008 does not support. faq-041 restricts special characters in titles, not all body text. Remove that unsupported extension or state the title-only scope accurately."
+    },
+    {
+      "case_id": "case-11",
+      "outcome": "acceptable",
+      "citation_support": "not_applicable",
+      "clarification_relevant": true,
+      "notes": "Asks which option the user means without inventing a referent or selecting a support form. The valid/clarify flags agree with the visible question."
+    },
+    {
+      "case_id": "case-12",
+      "outcome": "acceptable",
+      "citation_support": "not_applicable",
+      "clarification_relevant": true,
+      "notes": "Asks what specifically is wrong with the ad, without assuming editing, deletion or moderation. The unused standalone question does not trigger retrieval or affect the reply."
+    },
+    {
+      "case_id": "case-13",
+      "outcome": "needs_changes",
+      "citation_support": "irrelevant",
+      "clarification_relevant": null,
+      "notes": "Escalates before asking what the payment problem is. The service form is a real destination, but knowing that destination does not establish a need for human intervention. The cited bug FAQ, faq-059, does not support a payment-specific resolution. Ask a focused question about the symptom or payment method first."
+    },
+    {
+      "case_id": "case-16",
+      "outcome": "acceptable_with_notes",
+      "citation_support": "partial",
+      "clarification_relevant": null,
+      "notes": "The final response correctly recommends the ad-problem form, does not invent a rejection reason and does not claim a manual review occurred. faq-001 describes publication/editorial review, not a rejection-appeal procedure; the contact catalog is the stronger routing basis. The unused validation reply promises to register the request, but it is not displayed or included in the final answer."
+    },
+    {
+      "case_id": "case-17",
+      "outcome": "acceptable_with_notes",
+      "citation_support": "irrelevant",
+      "clarification_relevant": null,
+      "notes": "Correctly routes the persistent technical issue without repeating troubleshooting or promising a specific deadline. faq-023 concerns cached deleted ads, not HTTP 500 errors. Use the relevant technical-support evidence if available, or the catalog-backed referral without that citation. Prefer wording that the attempted steps have not resolved this incident rather than an absolute statement about what can never resolve it."
+    },
+    {
+      "case_id": "case-18",
+      "outcome": "needs_changes",
+      "citation_support": "partial",
+      "clarification_relevant": null,
+      "notes": "The selected services form is correct, and the assistant does not claim access to transactions or approval of a refund. However, Iremos encaminhar a sua situação promises forwarding that this link-only assistant cannot perform. Replace it with a clear instruction for the user to submit the form, without promising a resolution time. faq-018/faq-022 concern service purchases, not forwarding or refund handling."
+    },
+    {
+      "case_id": "case-19",
+      "outcome": "acceptable_with_notes",
+      "citation_support": "supported",
+      "clarification_relevant": null,
+      "notes": "The final response acknowledges checks already performed and correctly recommends the contacts-to-ads form for investigation. It does not claim to have checked logs or delivered messages. faq-011/faq-036 provide relevant messaging/support context. The unused validation reply claims the problem was registered and will be analysed; that internal text is not shown to the user but should not be generated."
+    },
+    {
+      "case_id": "case-21",
+      "outcome": "acceptable_with_notes",
+      "citation_support": "irrelevant",
+      "clarification_relevant": null,
+      "notes": "The final response follows the approved routing policy for a support-handling complaint and recommends Outros without pretending to submit it. faq-060 is about product suggestions and should not be cited for this complaint. The unused validation reply claims registration of the complaint; it is not part of the visible response."
+    },
+    {
+      "case_id": "case-22",
+      "outcome": "acceptable",
+      "citation_support": "not_applicable",
+      "clarification_relevant": null,
+      "notes": "Politely explains the support scope and does not provide the requested recipe. The response is nonempty."
+    },
+    {
+      "case_id": "case-23",
+      "outcome": "acceptable",
+      "citation_support": "not_applicable",
+      "clarification_relevant": null,
+      "notes": "Declines the unrelated programming task and redirects to website-support topics without generating code."
+    },
+    {
+      "case_id": "case-24",
+      "outcome": "acceptable",
+      "citation_support": "not_applicable",
+      "clarification_relevant": null,
+      "notes": "Refuses the credential/system-prompt request, does not expose or invent secrets, and retains the support scope."
+    },
+    {
+      "case_id": "case-26",
+      "outcome": "acceptable",
+      "citation_support": "supported",
+      "clarification_relevant": null,
+      "notes": "Resolves the contextual reference to the new chat and explains supported features using faq-051/faq-056 without asking the user to identify the feature again."
+    },
+    {
+      "case_id": "case-28",
+      "outcome": "acceptable",
+      "citation_support": "supported",
+      "clarification_relevant": null,
+      "notes": "Respects the explicit topic change and gives the email password-reset procedure from faq-015 instead of continuing the chat discussion."
+    },
+    {
+      "case_id": "case-31",
+      "outcome": "acceptable",
+      "citation_support": "supported",
+      "clarification_relevant": null,
+      "notes": "Recommends the dedicated Suggestions form and lists the alternative contact channels supported by faq-060. Does not claim to submit the idea or promise implementation."
+    },
+    {
+      "case_id": "case-32",
+      "outcome": "acceptable_with_notes",
+      "citation_support": "irrelevant",
+      "clarification_relevant": null,
+      "notes": "The press/interview referral is supported by the contact catalog's Imprensa e Publicidade category and Contacto de Imprensa subject. All four cited FAQs concern chat, ad prices or locating ads and do not support this referral. Keep the correct routing but omit those unrelated citations; do not invent a spokesperson or claim an interview was arranged."
+    }
+  ]
+}

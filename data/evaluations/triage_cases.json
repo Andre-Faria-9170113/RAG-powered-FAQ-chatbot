@@ -1,7 +1,7 @@
 {
   "version": "1.1",
-  "label_status": "draft_for_human_review",
-  "reviewed_by": null,
+  "label_status": "human_reviewed",
+  "reviewed_by": "André Faria",
   "corpus_version": "2acdf31b366950d18512a4e0bc076356b94204a6bf1bda0475b1c8a0be126ed4",
   "contact_forms_version": "67d34a88c146c3fc1339056919cd189067e06ab8d5682bd4bafe6c6253c7a6de",
   "cases": [

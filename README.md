@@ -106,9 +106,10 @@ differences from the brief and course references.
 
 ## Triage evaluation
 
-`data/evaluations/triage_cases.json` contains 34 draft-labelled Portuguese support
-cases: 22 development cases and 12 holdout cases. Labels need review by the
-project owner before being treated as human-approved ground truth.
+`data/evaluations/triage_cases.json` contains 34 synthetic Portuguese support
+cases: 22 development cases and 12 holdout cases. Label approval and its named
+owner are recorded in `label_status` and `reviewed_by`; this is distinct from
+reviewing the chatbot's generated responses.
 
 ```bash
 .venv/bin/python evaluate.py --dry-run
@@ -126,6 +127,7 @@ N/A; the historical baseline has no retroactively invented token/cost numbers.
 
 See [the evaluation guide](docs/evaluation.md) for metric definitions, label
 review, report regeneration and reproducibility details.
-The [historical development baseline](docs/evaluations/README.md) includes results
-and failure examples for dataset v1.0, before the contact catalog update. It is
-not a score for the current dataset or prompts; the holdout split remains unused.
+The [published baselines](docs/evaluations/README.md) include the current run-07
+results, its exact dataset snapshot and an explicitly AI-authored qualitative
+review, alongside the unchanged historical v1.0 baseline. Execution-time approval
+metadata is preserved rather than backdated; the holdout split remains unused.

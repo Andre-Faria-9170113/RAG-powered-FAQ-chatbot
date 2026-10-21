@@ -1,0 +1,2112 @@
+{
+  "metadata": {
+    "started_at_utc": "2026-10-21T15:03:29.031461+00:00",
+    "split": "development",
+    "generation_model": "gpt-4.1-mini",
+    "embedding_model": "text-embedding-3-small",
+    "top_k": 4,
+    "lexical_top_k": 4,
+    "min_similarity": 0.35,
+    "corpus_version": "2acdf31b366950d18512a4e0bc076356b94204a6bf1bda0475b1c8a0be126ed4",
+    "contact_forms_version": "67d34a88c146c3fc1339056919cd189067e06ab8d5682bd4bafe6c6253c7a6de",
+    "dataset_sha256": "a34c3450f9283562720f13c5d9a576eacb836ca6b3cb02df049faf8e4cc0e3f5",
+    "implementation_sha256": "5c0bbd57f93afea17f8d87620be0330c18232e67b975ffdd90493f3957106295",
+    "contact_router_sha256": "458e92fe8e0c2fd684346c55f11e85c65f5b1e3fd7afa79b663b7399307213ce",
+    "evaluator_sha256": "8c440b7f41b2066200da31639199aa6db352e6bc2565b4a30187898b6e43e95c",
+    "telemetry_sha256": "dbe7231222effb12dd07c1acdcd94677cfeae92304ddd477e939544610818495",
+    "pricing_snapshot": {
+      "currency": "USD",
+      "reporting_currency": "EUR",
+      "eur_exchange_rate": {
+        "usd_per_eur": 1.1215,
+        "as_of": "2026-10-20",
+        "source_url": "https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/eurofxref-graph-usd.en.html"
+      },
+      "service_tier": "standard",
+      "verified_on": "2026-10-21",
+      "sources": [
+        "https://developers.openai.com/api/docs/models/gpt-4.1-mini",
+        "https://developers.openai.com/api/docs/models/text-embedding-3-small"
+      ],
+      "models": {
+        "gpt-4.1-mini": {
+          "kind": "responses",
+          "aliases": [
+            "gpt-4.1-mini-2025-04-14"
+          ],
+          "input_usd_per_million": 0.4,
+          "cached_input_usd_per_million": 0.1,
+          "output_usd_per_million": 1.6
+        },
+        "text-embedding-3-small": {
+          "kind": "embeddings",
+          "aliases": [],
+          "input_usd_per_million": 0.02,
+          "cached_input_usd_per_million": 0.0,
+          "output_usd_per_million": 0.0
+        }
+      }
+    },
+    "reporting_currency": "EUR",
+    "usage_tracking_version": 2,
+    "triage_decision_version": 2,
+    "validation_contract_version": 4,
+    "max_structured_repair_attempts": 1,
+    "git_revision": "269520543a44d88f66fe0dfb878d0bcd71683733",
+    "label_status": "draft_for_human_review",
+    "timeout_seconds": 30,
+    "sdk_max_retries": 0
+  },
+  "results": [
+    {
+      "case_id": "case-01",
+      "inferred_action": "answer",
+      "answer": "No CustoJusto.pt os anúncios são gratuitos, ou seja, não é necessário pagar para inserir um anúncio nem paga qualquer comissão pela venda do seu artigo. Pode publicar o seu anúncio sem custos no website.\n\nFonte: faq-002.",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "",
+        "standalone_question": "Os particulares têm de pagar para publicar um anúncio ou dar uma comissão quando vendem no website de classificados gratuito?",
+        "needs_clarification": false
+      },
+      "structured_answer": {
+        "action": "answer",
+        "relevant_contact_form": "none",
+        "sources": [
+          {
+            "chunk_id": "faq-002",
+            "question": "Quanto custa publicar um anúncio no CustoJusto.pt?"
+          }
+        ],
+        "topics": [
+          "publicação de anúncios",
+          "custos",
+          "comissões"
+        ],
+        "confidence_score": "high",
+        "missing_info": [],
+        "suggested_response": "No CustoJusto.pt os anúncios são gratuitos, ou seja, não é necessário pagar para inserir um anúncio nem paga qualquer comissão pela venda do seu artigo. Pode publicar o seu anúncio sem custos no website.\n\nFonte: faq-002.",
+        "missing_knowledge": []
+      },
+      "latency_ms": 4088.2,
+      "api_calls": [
+        {
+          "stage": "validation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 1616.2,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 1151,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 46,
+          "reasoning_tokens": 0,
+          "total_tokens": 1197,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.000534,
+          "estimated_cost_eur": 0.0004761480160499331
+        },
+        {
+          "stage": "query_embedding",
+          "kind": "embeddings",
+          "requested_model": "text-embedding-3-small",
+          "response_model": "text-embedding-3-small",
+          "service_tier": null,
+          "latency_ms": 430.3,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 30,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 0,
+          "reasoning_tokens": 0,
+          "total_tokens": 30,
+          "pricing_model": "text-embedding-3-small",
+          "estimated_cost_usd": 6e-07,
+          "estimated_cost_eur": 5.349977708426215e-07
+        },
+        {
+          "stage": "answer_generation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 1822.9,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 2532,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 122,
+          "reasoning_tokens": 0,
+          "total_tokens": 2654,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.001208,
+          "estimated_cost_eur": 0.001077128845296478
+        }
+      ],
+      "error_type": null,
+      "error_status": null,
+      "validation_issues": [],
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-02",
+      "inferred_action": "answer",
+      "answer": "Se não apagar o seu anúncio, ele ficará publicado durante 60 dias. Findo este período, poderá renovar o anúncio por um igual período de tempo.",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "",
+        "standalone_question": "Durante quanto tempo fica publicado um anúncio se eu não o apagar, e posso renovar o anúncio no website?",
+        "needs_clarification": false
+      },
+      "structured_answer": {
+        "action": "answer",
+        "relevant_contact_form": "none",
+        "sources": [
+          {
+            "chunk_id": "faq-003",
+            "question": "Qual é a validade de um anúncio?"
+          }
+        ],
+        "topics": [
+          "validade do anúncio",
+          "renovação do anúncio"
+        ],
+        "confidence_score": "high",
+        "missing_info": [],
+        "suggested_response": "Se não apagar o seu anúncio, ele ficará publicado durante 60 dias. Findo este período, poderá renovar o anúncio por um igual período de tempo.",
+        "missing_knowledge": []
+      },
+      "latency_ms": 3639.9,
+      "api_calls": [
+        {
+          "stage": "validation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 1384.1,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 1151,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 45,
+          "reasoning_tokens": 0,
+          "total_tokens": 1196,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0005324,
+          "estimated_cost_eur": 0.0004747213553276861
+        },
+        {
+          "stage": "query_embedding",
+          "kind": "embeddings",
+          "requested_model": "text-embedding-3-small",
+          "response_model": "text-embedding-3-small",
+          "service_tier": null,
+          "latency_ms": 375.2,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 32,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 0,
+          "reasoning_tokens": 0,
+          "total_tokens": 32,
+          "pricing_model": "text-embedding-3-small",
+          "estimated_cost_usd": 6.4e-07,
+          "estimated_cost_eur": 5.706642888987962e-07
+        },
+        {
+          "stage": "answer_generation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 1865.3,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 2076,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 98,
+          "reasoning_tokens": 0,
+          "total_tokens": 2174,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0009872,
+          "estimated_cost_eur": 0.0008802496656263932
+        }
+      ],
+      "error_type": null,
+      "error_status": null,
+      "validation_issues": [],
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-03",
+      "inferred_action": "answer",
+      "answer": "Pode encontrar a lista dos seus anúncios publicados na sua área pessoal, na secção \"Meus anúncios\" do site CustoJusto.",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "",
+        "standalone_question": "Onde posso encontrar a lista dos meus anúncios publicados no website?",
+        "needs_clarification": false
+      },
+      "structured_answer": {
+        "action": "answer",
+        "relevant_contact_form": "none",
+        "sources": [
+          {
+            "chunk_id": "faq-014",
+            "question": "Como faço para localizar o meu anúncio?"
+          }
+        ],
+        "topics": [
+          "listar anúncios publicados",
+          "área pessoal",
+          "Meus anúncios"
+        ],
+        "confidence_score": "high",
+        "missing_info": [],
+        "suggested_response": "Pode encontrar a lista dos seus anúncios publicados na sua área pessoal, na secção \"Meus anúncios\" do site CustoJusto.",
+        "missing_knowledge": []
+      },
+      "latency_ms": 3423.7,
+      "api_calls": [
+        {
+          "stage": "validation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 1357.0,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 1148,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 36,
+          "reasoning_tokens": 0,
+          "total_tokens": 1184,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0005168,
+          "estimated_cost_eur": 0.000460811413285778
+        },
+        {
+          "stage": "query_embedding",
+          "kind": "embeddings",
+          "requested_model": "text-embedding-3-small",
+          "response_model": "text-embedding-3-small",
+          "service_tier": null,
+          "latency_ms": 216.5,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 19,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 0,
+          "reasoning_tokens": 0,
+          "total_tokens": 19,
+          "pricing_model": "text-embedding-3-small",
+          "estimated_cost_usd": 3.8e-07,
+          "estimated_cost_eur": 3.388319215336603e-07
+        },
+        {
+          "stage": "answer_generation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 1834.1,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 1944,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 97,
+          "reasoning_tokens": 0,
+          "total_tokens": 2041,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0009328,
+          "estimated_cost_eur": 0.0008317432010699955
+        }
+      ],
+      "error_type": null,
+      "error_status": null,
+      "validation_issues": [],
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-04",
+      "inferred_action": "answer",
+      "answer": "Para recuperar a sua palavra-passe, selecione a opção “não tem a password?” no ecrã de login do site. Depois, insira o endereço de email associado à sua conta e clique em “Enviar”. Receberá um email com um link que lhe permitirá alterar a sua password de forma simples e segura. [Fonte: faq-015]",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "",
+        "standalone_question": "Como posso recuperar a palavra-passe da minha conta se me esqueci dela mas ainda tenho acesso ao email associado?",
+        "needs_clarification": false
+      },
+      "structured_answer": {
+        "action": "answer",
+        "relevant_contact_form": "none",
+        "sources": [
+          {
+            "chunk_id": "faq-015",
+            "question": "Esqueci-me da password!"
+          }
+        ],
+        "topics": [
+          "recuperar palavra-passe",
+          "acesso à conta",
+          "senha esquecida"
+        ],
+        "confidence_score": "high",
+        "missing_info": [],
+        "suggested_response": "Para recuperar a sua palavra-passe, selecione a opção “não tem a password?” no ecrã de login do site. Depois, insira o endereço de email associado à sua conta e clique em “Enviar”. Receberá um email com um link que lhe permitirá alterar a sua password de forma simples e segura. [Fonte: faq-015]",
+        "missing_knowledge": []
+      },
+      "latency_ms": 3979.1,
+      "api_calls": [
+        {
+          "stage": "validation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 1106.0,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 1156,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 47,
+          "reasoning_tokens": 0,
+          "total_tokens": 1203,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0005376,
+          "estimated_cost_eur": 0.00047935800267498885
+        },
+        {
+          "stage": "query_embedding",
+          "kind": "embeddings",
+          "requested_model": "text-embedding-3-small",
+          "response_model": "text-embedding-3-small",
+          "service_tier": null,
+          "latency_ms": 187.7,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 28,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 0,
+          "reasoning_tokens": 0,
+          "total_tokens": 28,
+          "pricing_model": "text-embedding-3-small",
+          "estimated_cost_usd": 5.6e-07,
+          "estimated_cost_eur": 4.993312527864467e-07
+        },
+        {
+          "stage": "answer_generation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 2668.9,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 2291,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 145,
+          "reasoning_tokens": 0,
+          "total_tokens": 2436,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0011484,
+          "estimated_cost_eur": 0.0010239857333927775
+        }
+      ],
+      "error_type": null,
+      "error_status": null,
+      "validation_issues": [],
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-05",
+      "inferred_action": "answer",
+      "answer": "Para guardar uma pesquisa no website, deve clicar em \"Guardar\" que aparece por baixo da barra de pesquisa em qualquer página de pesquisa. Pode guardar até um máximo de 20 pesquisas. Assim, consegue armazenar e consultar facilmente as suas pesquisas favoritas.",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "",
+        "standalone_question": "Como posso guardar uma pesquisa no website e qual o número máximo de pesquisas que posso guardar?",
+        "needs_clarification": false
+      },
+      "structured_answer": {
+        "action": "answer",
+        "relevant_contact_form": "none",
+        "sources": [
+          {
+            "chunk_id": "faq-030",
+            "question": "Como guardo uma pesquisa?"
+          }
+        ],
+        "topics": [
+          "guardar pesquisa",
+          "limite de pesquisas guardadas"
+        ],
+        "confidence_score": "high",
+        "missing_info": [],
+        "suggested_response": "Para guardar uma pesquisa no website, deve clicar em \"Guardar\" que aparece por baixo da barra de pesquisa em qualquer página de pesquisa. Pode guardar até um máximo de 20 pesquisas. Assim, consegue armazenar e consultar facilmente as suas pesquisas favoritas.",
+        "missing_knowledge": []
+      },
+      "latency_ms": 3494.6,
+      "api_calls": [
+        {
+          "stage": "validation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 1517.2,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 1146,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 42,
+          "reasoning_tokens": 0,
+          "total_tokens": 1188,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0005256,
+          "estimated_cost_eur": 0.0004686580472581364
+        },
+        {
+          "stage": "query_embedding",
+          "kind": "embeddings",
+          "requested_model": "text-embedding-3-small",
+          "response_model": "text-embedding-3-small",
+          "service_tier": null,
+          "latency_ms": 252.7,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 22,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 0,
+          "reasoning_tokens": 0,
+          "total_tokens": 22,
+          "pricing_model": "text-embedding-3-small",
+          "estimated_cost_usd": 4.4e-07,
+          "estimated_cost_eur": 3.9233169861792243e-07
+        },
+        {
+          "stage": "answer_generation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 1708.6,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 1950,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 115,
+          "reasoning_tokens": 0,
+          "total_tokens": 2065,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.000964,
+          "estimated_cost_eur": 0.0008595630851538119
+        }
+      ],
+      "error_type": null,
+      "error_status": null,
+      "validation_issues": [],
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-06",
+      "inferred_action": "answer",
+      "answer": "O novo chat traz várias melhorias e novas funcionalidades. Agora, pode pesquisar pelos títulos das conversas e também editar ou apagar mensagens ou anexos enviados por engano. Além disso, tornou-se mais fácil e intuitivo reportar ou bloquear um utilizador. Estas atualizações também incluem melhor desempenho, maior estabilidade, melhorias na segurança e proteção de dados. Para começar a usar, basta aceder ao chat como sempre fez, pois a atualização é automática para todos os utilizadores. (baseado nos FAQs faq-056 e faq-051)",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "",
+        "standalone_question": "Quais são as funcionalidades e alterações do novo chat, incluindo a possibilidade de editar mensagens enviadas por engano?",
+        "needs_clarification": false
+      },
+      "structured_answer": {
+        "action": "answer",
+        "relevant_contact_form": "none",
+        "sources": [
+          {
+            "chunk_id": "faq-056",
+            "question": "Que alterações têm este novo chat?"
+          },
+          {
+            "chunk_id": "faq-051",
+            "question": "O que mudou na nova versão da plataforma de chat?"
+          }
+        ],
+        "topics": [
+          "novo chat",
+          "funcionalidades do chat",
+          "editar mensagens"
+        ],
+        "confidence_score": "high",
+        "missing_info": [],
+        "suggested_response": "O novo chat traz várias melhorias e novas funcionalidades. Agora, pode pesquisar pelos títulos das conversas e também editar ou apagar mensagens ou anexos enviados por engano. Além disso, tornou-se mais fácil e intuitivo reportar ou bloquear um utilizador. Estas atualizações também incluem melhor desempenho, maior estabilidade, melhorias na segurança e proteção de dados. Para começar a usar, basta aceder ao chat como sempre fez, pois a atualização é automática para todos os utilizadores. (baseado nos FAQs faq-056 e faq-051)",
+        "missing_knowledge": []
+      },
+      "latency_ms": 3844.4,
+      "api_calls": [
+        {
+          "stage": "validation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 1209.5,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 1152,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 47,
+          "reasoning_tokens": 0,
+          "total_tokens": 1199,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.000536,
+          "estimated_cost_eur": 0.00047793134195274185
+        },
+        {
+          "stage": "query_embedding",
+          "kind": "embeddings",
+          "requested_model": "text-embedding-3-small",
+          "response_model": "text-embedding-3-small",
+          "service_tier": null,
+          "latency_ms": 234.3,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 30,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 0,
+          "reasoning_tokens": 0,
+          "total_tokens": 30,
+          "pricing_model": "text-embedding-3-small",
+          "estimated_cost_usd": 6e-07,
+          "estimated_cost_eur": 5.349977708426215e-07
+        },
+        {
+          "stage": "answer_generation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 2384.5,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 2045,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 197,
+          "reasoning_tokens": 0,
+          "total_tokens": 2242,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0011332,
+          "estimated_cost_eur": 0.001010432456531431
+        }
+      ],
+      "error_type": null,
+      "error_status": null,
+      "validation_issues": [],
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-07",
+      "inferred_action": "answer",
+      "answer": "Não, não pode usar HTML para formatar o texto do seu anúncio. Qualquer código HTML inserido será apagado do anúncio para garantir a conformidade com as regras do site. (Fonte: faq-008) Você deve escrever o texto de forma clara e detalhada, evitando o uso de links, termos de pesquisa, ou caracteres especiais, conforme as orientações para a criação de anúncios.",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "",
+        "standalone_question": "Posso usar HTML para formatar o texto do meu anúncio no website de classificados gratuito?",
+        "needs_clarification": false
+      },
+      "structured_answer": {
+        "action": "answer",
+        "relevant_contact_form": "none",
+        "sources": [
+          {
+            "chunk_id": "faq-008",
+            "question": "Posso colocar código HTML no meu anúncio?"
+          }
+        ],
+        "topics": [
+          "formatação texto anúncio",
+          "uso HTML em anúncio"
+        ],
+        "confidence_score": "high",
+        "missing_info": [],
+        "suggested_response": "Não, não pode usar HTML para formatar o texto do seu anúncio. Qualquer código HTML inserido será apagado do anúncio para garantir a conformidade com as regras do site. (Fonte: faq-008) Você deve escrever o texto de forma clara e detalhada, evitando o uso de links, termos de pesquisa, ou caracteres especiais, conforme as orientações para a criação de anúncios.",
+        "missing_knowledge": []
+      },
+      "latency_ms": 3167.8,
+      "api_calls": [
+        {
+          "stage": "validation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 1172.9,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 1147,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 42,
+          "reasoning_tokens": 0,
+          "total_tokens": 1189,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.000526,
+          "estimated_cost_eur": 0.00046901471243869817
+        },
+        {
+          "stage": "query_embedding",
+          "kind": "embeddings",
+          "requested_model": "text-embedding-3-small",
+          "response_model": "text-embedding-3-small",
+          "service_tier": null,
+          "latency_ms": 204.3,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 22,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 0,
+          "reasoning_tokens": 0,
+          "total_tokens": 22,
+          "pricing_model": "text-embedding-3-small",
+          "estimated_cost_usd": 4.4e-07,
+          "estimated_cost_eur": 3.9233169861792243e-07
+        },
+        {
+          "stage": "answer_generation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 1772.1,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 2394,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 148,
+          "reasoning_tokens": 0,
+          "total_tokens": 2542,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0011944,
+          "estimated_cost_eur": 0.0010650022291573784
+        }
+      ],
+      "error_type": null,
+      "error_status": null,
+      "validation_issues": [],
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-11",
+      "inferred_action": "clarify",
+      "answer": "Por favor, indique a que opção se refere para que eu possa ajudar com mais precisão.",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "Por favor, indique a que opção se refere para que eu possa ajudar com mais precisão.",
+        "standalone_question": "",
+        "needs_clarification": true
+      },
+      "structured_answer": null,
+      "latency_ms": 1162.2,
+      "api_calls": [
+        {
+          "stage": "validation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 1162.2,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 1141,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 43,
+          "reasoning_tokens": 0,
+          "total_tokens": 1184,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0005252,
+          "estimated_cost_eur": 0.00046830138207757467
+        }
+      ],
+      "error_type": null,
+      "error_status": null,
+      "validation_issues": [],
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-12",
+      "inferred_action": "clarify",
+      "answer": "Pode especificar qual é o problema que está a ter com o seu anúncio para que eu possa ajudar melhor?",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "Pode especificar qual é o problema que está a ter com o seu anúncio para que eu possa ajudar melhor?",
+        "standalone_question": "Qual é o problema específico que está a ter com o seu anúncio no website de classificados?",
+        "needs_clarification": true
+      },
+      "structured_answer": null,
+      "latency_ms": 1339.2,
+      "api_calls": [
+        {
+          "stage": "validation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 1339.2,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 1141,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 65,
+          "reasoning_tokens": 0,
+          "total_tokens": 1206,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0005604,
+          "estimated_cost_eur": 0.0004996879179670085
+        }
+      ],
+      "error_type": null,
+      "error_status": null,
+      "validation_issues": [],
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-13",
+      "inferred_action": "escalate",
+      "answer": "Para resolver problemas relacionados com pagamentos no CustoJusto, recomendamos que contacte a equipa responsável por problemas com serviços e pagamentos. Pode explicar o detalhe do seu problema no formulário adequado para que possam ajudar diretamente.\n\nFormulário recomendado: [Problemas com os serviços](https://www.custojusto.pt/ajuda-contacto?section=12)",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "",
+        "standalone_question": "Qual é o problema que está a ter com um pagamento no website CustoJusto?",
+        "needs_clarification": false
+      },
+      "structured_answer": {
+        "action": "escalate",
+        "relevant_contact_form": "pagamentos_servicos",
+        "sources": [
+          {
+            "chunk_id": "faq-059",
+            "question": "O que fazer se eu encontrar um erro ou bug?"
+          }
+        ],
+        "topics": [
+          "problema com pagamento"
+        ],
+        "confidence_score": "high",
+        "missing_info": [],
+        "suggested_response": "Para resolver problemas relacionados com pagamentos no CustoJusto, recomendamos que contacte a equipa responsável por problemas com serviços e pagamentos. Pode explicar o detalhe do seu problema no formulário adequado para que possam ajudar diretamente.",
+        "missing_knowledge": []
+      },
+      "latency_ms": 2900.4,
+      "api_calls": [
+        {
+          "stage": "validation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 888.5,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 1146,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 42,
+          "reasoning_tokens": 0,
+          "total_tokens": 1188,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0005256,
+          "estimated_cost_eur": 0.0004686580472581364
+        },
+        {
+          "stage": "query_embedding",
+          "kind": "embeddings",
+          "requested_model": "text-embedding-3-small",
+          "response_model": "text-embedding-3-small",
+          "service_tier": null,
+          "latency_ms": 208.5,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 18,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 0,
+          "reasoning_tokens": 0,
+          "total_tokens": 18,
+          "pricing_model": "text-embedding-3-small",
+          "estimated_cost_usd": 3.6e-07,
+          "estimated_cost_eur": 3.209986625055729e-07
+        },
+        {
+          "stage": "answer_generation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 1787.1,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 2513,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 110,
+          "reasoning_tokens": 0,
+          "total_tokens": 2623,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0011812,
+          "estimated_cost_eur": 0.0010532322781988408
+        }
+      ],
+      "error_type": null,
+      "error_status": null,
+      "validation_issues": [],
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-16",
+      "inferred_action": "escalate",
+      "answer": "Entendemos que o seu anúncio 900000001 foi rejeitado sem indicação do motivo e pretende uma revisão manual desta decisão pela equipa. Para resolver esta situação, recomendamos que contacte diretamente a nossa equipa através do formulário 'Problemas com anúncios', selecionando o assunto apropriado para que possam analisar e responder ao seu pedido de revisão.\n\nFormulário recomendado: [Problemas com anúncios](https://www.custojusto.pt/ajuda-contacto?section=7)",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "Entendo a sua situação. Vou registar o seu pedido para que a equipa reveja manualmente a decisão sobre o anúncio 900000001.",
+        "standalone_question": "O anúncio identificado como 900000001 foi rejeitado sem motivo aparente; podem reavaliar manualmente essa decisão?",
+        "needs_clarification": false
+      },
+      "structured_answer": {
+        "action": "escalate",
+        "relevant_contact_form": "problemas_anuncios",
+        "sources": [
+          {
+            "chunk_id": "faq-001",
+            "question": "Como publicar um anúncio?"
+          }
+        ],
+        "topics": [
+          "anúncio rejeitado",
+          "revisão manual",
+          "motivo de rejeição"
+        ],
+        "confidence_score": "high",
+        "missing_info": [],
+        "suggested_response": "Entendemos que o seu anúncio 900000001 foi rejeitado sem indicação do motivo e pretende uma revisão manual desta decisão pela equipa. Para resolver esta situação, recomendamos que contacte diretamente a nossa equipa através do formulário 'Problemas com anúncios', selecionando o assunto apropriado para que possam analisar e responder ao seu pedido de revisão.",
+        "missing_knowledge": []
+      },
+      "latency_ms": 3794.6,
+      "api_calls": [
+        {
+          "stage": "validation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 1218.8,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 1176,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 79,
+          "reasoning_tokens": 0,
+          "total_tokens": 1255,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0005968,
+          "estimated_cost_eur": 0.0005321444493981275
+        },
+        {
+          "stage": "query_embedding",
+          "kind": "embeddings",
+          "requested_model": "text-embedding-3-small",
+          "response_model": "text-embedding-3-small",
+          "service_tier": null,
+          "latency_ms": 1006.7,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 34,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 0,
+          "reasoning_tokens": 0,
+          "total_tokens": 34,
+          "pricing_model": "text-embedding-3-small",
+          "estimated_cost_usd": 6.8e-07,
+          "estimated_cost_eur": 6.063308069549711e-07
+        },
+        {
+          "stage": "answer_generation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 1553.2,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 2339,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 142,
+          "reasoning_tokens": 0,
+          "total_tokens": 2481,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0011628,
+          "estimated_cost_eur": 0.0010368256798930005
+        }
+      ],
+      "error_type": null,
+      "error_status": null,
+      "validation_issues": [],
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-17",
+      "inferred_action": "escalate",
+      "answer": "O erro 500 que está a ocorrer em todas as páginas de anúncios indica um problema técnico no website que não pode ser resolvido apenas com o que fez (atualizar página, limpar cache ou trocar de navegador). Recomendo que contacte a nossa equipa de suporte técnico para que possam investigar e resolver o problema o mais rápido possível.\n\nFormulário recomendado: [Problemas técnicos](https://www.custojusto.pt/ajuda-contacto?section=8)",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "",
+        "standalone_question": "Como posso resolver o erro 500 que aparece em todas as páginas de anúncios no website?",
+        "needs_clarification": false
+      },
+      "structured_answer": {
+        "action": "escalate",
+        "relevant_contact_form": "problemas_tecnicos",
+        "sources": [
+          {
+            "chunk_id": "faq-023",
+            "question": "Por que o meu anúncio continua visível após ter sido eliminado?"
+          }
+        ],
+        "topics": [
+          "erro 500",
+          "problemática técnica em páginas de anúncios"
+        ],
+        "confidence_score": "high",
+        "missing_info": [],
+        "suggested_response": "O erro 500 que está a ocorrer em todas as páginas de anúncios indica um problema técnico no website que não pode ser resolvido apenas com o que fez (atualizar página, limpar cache ou trocar de navegador). Recomendo que contacte a nossa equipa de suporte técnico para que possam investigar e resolver o problema o mais rápido possível.",
+        "missing_knowledge": []
+      },
+      "latency_ms": 3982.4,
+      "api_calls": [
+        {
+          "stage": "validation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 1334.3,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 1173,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 42,
+          "reasoning_tokens": 0,
+          "total_tokens": 1215,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0005364,
+          "estimated_cost_eur": 0.0004782880071333036
+        },
+        {
+          "stage": "query_embedding",
+          "kind": "embeddings",
+          "requested_model": "text-embedding-3-small",
+          "response_model": "text-embedding-3-small",
+          "service_tier": null,
+          "latency_ms": 231.3,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 24,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 0,
+          "reasoning_tokens": 0,
+          "total_tokens": 24,
+          "pricing_model": "text-embedding-3-small",
+          "estimated_cost_usd": 4.8e-07,
+          "estimated_cost_eur": 4.279982166740972e-07
+        },
+        {
+          "stage": "answer_generation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 2402.3,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 2279,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 146,
+          "reasoning_tokens": 0,
+          "total_tokens": 2425,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0011452,
+          "estimated_cost_eur": 0.0010211324119482835
+        }
+      ],
+      "error_type": null,
+      "error_status": null,
+      "validation_issues": [],
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-18",
+      "inferred_action": "escalate",
+      "answer": "Percebo que verificou cobranças duplicadas para o serviço de destaque e pretende que a equipa analise e trate do reembolso. Para este tipo de questão relacionada com cobranças, pagamentos e reembolsos, deverá contactar a nossa equipa através do formulário de 'Problemas com os serviços'. Iremos encaminhar a sua situação para análise e resolução o mais breve possível.\n\nFormulário recomendado: [Problemas com os serviços](https://www.custojusto.pt/ajuda-contacto?section=12)",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "",
+        "standalone_question": "Como posso proceder para pedir análise e reembolso de cobranças duplicadas no serviço de destaque do website de classificados?",
+        "needs_clarification": false
+      },
+      "structured_answer": {
+        "action": "escalate",
+        "relevant_contact_form": "pagamentos_servicos",
+        "sources": [
+          {
+            "chunk_id": "faq-018",
+            "question": "Como posso colocar o meu anúncio no topo da lista?"
+          },
+          {
+            "chunk_id": "faq-022",
+            "question": "Como faço para comprar os vários serviços em simultâneo para o mesmo anúncio?"
+          }
+        ],
+        "topics": [
+          "duplicação de cobranças",
+          "reembolso",
+          "serviços destaque",
+          "pagamentos"
+        ],
+        "confidence_score": "high",
+        "missing_info": [],
+        "suggested_response": "Percebo que verificou cobranças duplicadas para o serviço de destaque e pretende que a equipa analise e trate do reembolso. Para este tipo de questão relacionada com cobranças, pagamentos e reembolsos, deverá contactar a nossa equipa através do formulário de 'Problemas com os serviços'. Iremos encaminhar a sua situação para análise e resolução o mais breve possível.",
+        "missing_knowledge": []
+      },
+      "latency_ms": 3625.2,
+      "api_calls": [
+        {
+          "stage": "validation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 1008.6,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 1178,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 47,
+          "reasoning_tokens": 0,
+          "total_tokens": 1225,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0005464,
+          "estimated_cost_eur": 0.0004872046366473473
+        },
+        {
+          "stage": "query_embedding",
+          "kind": "embeddings",
+          "requested_model": "text-embedding-3-small",
+          "response_model": "text-embedding-3-small",
+          "service_tier": null,
+          "latency_ms": 182.9,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 32,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 0,
+          "reasoning_tokens": 0,
+          "total_tokens": 32,
+          "pricing_model": "text-embedding-3-small",
+          "estimated_cost_usd": 6.4e-07,
+          "estimated_cost_eur": 5.706642888987962e-07
+        },
+        {
+          "stage": "answer_generation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 2417.3,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 2155,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 182,
+          "reasoning_tokens": 0,
+          "total_tokens": 2337,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0011532,
+          "estimated_cost_eur": 0.0010282657155595185
+        }
+      ],
+      "error_type": null,
+      "error_status": null,
+      "validation_issues": [],
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-19",
+      "inferred_action": "escalate",
+      "answer": "Entendo que as mensagens para o anunciante do anúncio 900000002 não estão a ser entregues, apesar das verificações que já fez nas contas, pastas de spam, app e web. Para resolver esta situação, é necessário que a equipa técnica analise e verifique a entrega dessas mensagens. Recomendo que contacte a nossa equipa através do formulário 'Contactos a anúncios' para que possam proceder à investigação e ajudar a resolver o problema.\n\nFormulário recomendado: [Contactos a anúncios](https://www.custojusto.pt/ajuda-contacto?section=6)",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "Registámos o seu problema de não receção das mensagens para o anúncio 900000002 e a situação será analisada pela equipa técnica. Se houver mais detalhes que queira partilhar, estamos à disposição.",
+        "standalone_question": "As mensagens para o anunciante do anúncio 900000002 não estão a ser entregues; como pode a equipa verificar e resolver este problema de entrega de mensagens?",
+        "needs_clarification": false
+      },
+      "structured_answer": {
+        "action": "escalate",
+        "relevant_contact_form": "contactos_anuncios",
+        "sources": [
+          {
+            "chunk_id": "faq-011",
+            "question": "Não recebi nenhum email! O que fazer?"
+          },
+          {
+            "chunk_id": "faq-036",
+            "question": "Como entrar em contacto com um determinado anunciante por email?"
+          }
+        ],
+        "topics": [
+          "mensagens não entregues",
+          "entrega de mensagens",
+          "contacto com anunciantes"
+        ],
+        "confidence_score": "high",
+        "missing_info": [],
+        "suggested_response": "Entendo que as mensagens para o anunciante do anúncio 900000002 não estão a ser entregues, apesar das verificações que já fez nas contas, pastas de spam, app e web. Para resolver esta situação, é necessário que a equipa técnica analise e verifique a entrega dessas mensagens. Recomendo que contacte a nossa equipa através do formulário 'Contactos a anúncios' para que possam proceder à investigação e ajudar a resolver o problema.",
+        "missing_knowledge": []
+      },
+      "latency_ms": 5000.3,
+      "api_calls": [
+        {
+          "stage": "validation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 1418.0,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 1181,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 99,
+          "reasoning_tokens": 0,
+          "total_tokens": 1280,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0006308,
+          "estimated_cost_eur": 0.0005624609897458761
+        },
+        {
+          "stage": "query_embedding",
+          "kind": "embeddings",
+          "requested_model": "text-embedding-3-small",
+          "response_model": "text-embedding-3-small",
+          "service_tier": null,
+          "latency_ms": 194.1,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 39,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 0,
+          "reasoning_tokens": 0,
+          "total_tokens": 39,
+          "pricing_model": "text-embedding-3-small",
+          "estimated_cost_usd": 7.8e-07,
+          "estimated_cost_eur": 6.954971020954079e-07
+        },
+        {
+          "stage": "answer_generation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 3372.2,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 2234,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 193,
+          "reasoning_tokens": 0,
+          "total_tokens": 2427,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0012024,
+          "estimated_cost_eur": 0.0010721355327686134
+        }
+      ],
+      "error_type": null,
+      "error_status": null,
+      "validation_issues": [],
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-21",
+      "inferred_action": "escalate",
+      "answer": "Para apresentar uma reclamação formal sobre o atendimento ao cliente, recomendamos que contacte diretamente a nossa equipa através do formulário 'Outros', onde poderá expor a sua situação para análise e resposta por parte de um responsável.\n\nFormulário recomendado: [Outros](https://www.custojusto.pt/ajuda-contacto?section=11)",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "A sua reclamação formal sobre o atendimento foi registada e pode ser encaminhada ao responsável adequado para análise.",
+        "standalone_question": "Como posso apresentar uma reclamação formal sobre o atendimento ao cliente relacionado com o pedido de teste TEST-SUP-001?",
+        "needs_clarification": false
+      },
+      "structured_answer": {
+        "action": "escalate",
+        "relevant_contact_form": "outros",
+        "sources": [
+          {
+            "chunk_id": "faq-060",
+            "question": "Como posso sugerir melhorias para a plataforma?"
+          }
+        ],
+        "topics": [
+          "reclamação formal",
+          "atendimento ao cliente"
+        ],
+        "confidence_score": "high",
+        "missing_info": [],
+        "suggested_response": "Para apresentar uma reclamação formal sobre o atendimento ao cliente, recomendamos que contacte diretamente a nossa equipa através do formulário 'Outros', onde poderá expor a sua situação para análise e resposta por parte de um responsável.",
+        "missing_knowledge": []
+      },
+      "latency_ms": 3632.0,
+      "api_calls": [
+        {
+          "stage": "validation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 1200.0,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 1185,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 70,
+          "reasoning_tokens": 0,
+          "total_tokens": 1255,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.000586,
+          "estimated_cost_eur": 0.0005225144895229603
+        },
+        {
+          "stage": "query_embedding",
+          "kind": "embeddings",
+          "requested_model": "text-embedding-3-small",
+          "response_model": "text-embedding-3-small",
+          "service_tier": null,
+          "latency_ms": 178.5,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 29,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 0,
+          "reasoning_tokens": 0,
+          "total_tokens": 29,
+          "pricing_model": "text-embedding-3-small",
+          "estimated_cost_usd": 5.8e-07,
+          "estimated_cost_eur": 5.171645118145341e-07
+        },
+        {
+          "stage": "answer_generation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 2237.2,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 2282,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 114,
+          "reasoning_tokens": 0,
+          "total_tokens": 2396,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0010952,
+          "estimated_cost_eur": 0.0009765492643780651
+        }
+      ],
+      "error_type": null,
+      "error_status": null,
+      "validation_issues": [],
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-22",
+      "inferred_action": "reject",
+      "answer": "Este assistente ajuda com dúvidas sobre o website de classificados, como publicar ou gerir anúncios, e não fornece receitas culinárias.",
+      "validation": {
+        "is_valid_question": false,
+        "suggested_response": "Este assistente ajuda com dúvidas sobre o website de classificados, como publicar ou gerir anúncios, e não fornece receitas culinárias.",
+        "standalone_question": "",
+        "needs_clarification": false
+      },
+      "structured_answer": null,
+      "latency_ms": 1162.2,
+      "api_calls": [
+        {
+          "stage": "validation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 1162.2,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 1144,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 50,
+          "reasoning_tokens": 0,
+          "total_tokens": 1194,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0005376,
+          "estimated_cost_eur": 0.00047935800267498885
+        }
+      ],
+      "error_type": null,
+      "error_status": null,
+      "validation_issues": [],
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-23",
+      "inferred_action": "reject",
+      "answer": "Posso ajudar com perguntas sobre publicar, gerir ou pesquisar anúncios, conta, segurança e serviços do website de classificados, entre outros temas oficiais relacionados. Por favor, envie uma questão dentro dessas áreas para que eu possa ajudar.",
+      "validation": {
+        "is_valid_question": false,
+        "suggested_response": "Posso ajudar com perguntas sobre publicar, gerir ou pesquisar anúncios, conta, segurança e serviços do website de classificados, entre outros temas oficiais relacionados. Por favor, envie uma questão dentro dessas áreas para que eu possa ajudar.",
+        "standalone_question": "",
+        "needs_clarification": false
+      },
+      "structured_answer": null,
+      "latency_ms": 1322.3,
+      "api_calls": [
+        {
+          "stage": "validation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 1322.3,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 1148,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 69,
+          "reasoning_tokens": 0,
+          "total_tokens": 1217,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0005696,
+          "estimated_cost_eur": 0.0005078912171199287
+        }
+      ],
+      "error_type": null,
+      "error_status": null,
+      "validation_issues": [],
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-24",
+      "inferred_action": "reject",
+      "answer": "Lamento, não posso fornecer informação sobre credenciais ou detalhes técnicos internos. Estou aqui para ajudar com questões sobre o website de classificados.",
+      "validation": {
+        "is_valid_question": false,
+        "suggested_response": "Lamento, não posso fornecer informação sobre credenciais ou detalhes técnicos internos. Estou aqui para ajudar com questões sobre o website de classificados.",
+        "standalone_question": "",
+        "needs_clarification": false
+      },
+      "structured_answer": null,
+      "latency_ms": 1256.5,
+      "api_calls": [
+        {
+          "stage": "validation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 1256.4,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 1153,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 52,
+          "reasoning_tokens": 0,
+          "total_tokens": 1205,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0005444,
+          "estimated_cost_eur": 0.00048542131074453854
+        }
+      ],
+      "error_type": null,
+      "error_status": null,
+      "validation_issues": [],
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-26",
+      "inferred_action": "answer",
+      "answer": "A nova versão da plataforma de chat no website de classificados traz melhorias de desempenho, novos recursos e uma interface mais intuitiva. Inclui melhor tempo de resposta e estabilidade, a possibilidade de pesquisar pelos títulos das conversas, editar ou apagar mensagens e anexos enviados por engano, e uma opção mais fácil e intuitiva para reportar ou bloquear utilizadores. Estas atualizações visam melhorar a comunicação entre utilizadores de forma segura e eficiente.",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "",
+        "standalone_question": "Quais são as funcionalidades novas do chat no website de classificados?",
+        "needs_clarification": false
+      },
+      "structured_answer": {
+        "action": "answer",
+        "relevant_contact_form": "none",
+        "sources": [
+          {
+            "chunk_id": "faq-051",
+            "question": "O que mudou na nova versão da plataforma de chat?"
+          },
+          {
+            "chunk_id": "faq-056",
+            "question": "Que alterações têm este novo chat?"
+          }
+        ],
+        "topics": [
+          "chat",
+          "novas funcionalidades"
+        ],
+        "confidence_score": "high",
+        "missing_info": [],
+        "suggested_response": "A nova versão da plataforma de chat no website de classificados traz melhorias de desempenho, novos recursos e uma interface mais intuitiva. Inclui melhor tempo de resposta e estabilidade, a possibilidade de pesquisar pelos títulos das conversas, editar ou apagar mensagens e anexos enviados por engano, e uma opção mais fácil e intuitiva para reportar ou bloquear utilizadores. Estas atualizações visam melhorar a comunicação entre utilizadores de forma segura e eficiente.",
+        "missing_knowledge": []
+      },
+      "latency_ms": 3115.4,
+      "api_calls": [
+        {
+          "stage": "validation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 808.6,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 1172,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 37,
+          "reasoning_tokens": 0,
+          "total_tokens": 1209,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.000528,
+          "estimated_cost_eur": 0.0004707980383415069
+        },
+        {
+          "stage": "query_embedding",
+          "kind": "embeddings",
+          "requested_model": "text-embedding-3-small",
+          "response_model": "text-embedding-3-small",
+          "service_tier": null,
+          "latency_ms": 185.5,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 17,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 0,
+          "reasoning_tokens": 0,
+          "total_tokens": 17,
+          "pricing_model": "text-embedding-3-small",
+          "estimated_cost_usd": 3.4e-07,
+          "estimated_cost_eur": 3.0316540347748553e-07
+        },
+        {
+          "stage": "answer_generation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 2105.4,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 2149,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 172,
+          "reasoning_tokens": 0,
+          "total_tokens": 2321,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0011348,
+          "estimated_cost_eur": 0.001011859117253678
+        }
+      ],
+      "error_type": null,
+      "error_status": null,
+      "validation_issues": [],
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-28",
+      "inferred_action": "answer",
+      "answer": "Se esqueceu a sua palavra-passe, selecione a opção “não tem a password?”, insira o endereço de email associado à sua conta e clique em “Enviar”. Vai receber no seu email um link que lhe permitirá alterar a palavra-passe da sua conta.",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "",
+        "standalone_question": "Como posso recuperar a palavra-passe da minha conta utilizando o email associado?",
+        "needs_clarification": false
+      },
+      "structured_answer": {
+        "action": "answer",
+        "relevant_contact_form": "none",
+        "sources": [
+          {
+            "chunk_id": "faq-015",
+            "question": "Esqueci-me da password!"
+          }
+        ],
+        "topics": [
+          "recuperação de password",
+          "conta utilizador"
+        ],
+        "confidence_score": "high",
+        "missing_info": [],
+        "suggested_response": "Se esqueceu a sua palavra-passe, selecione a opção “não tem a password?”, insira o endereço de email associado à sua conta e clique em “Enviar”. Vai receber no seu email um link que lhe permitirá alterar a palavra-passe da sua conta.",
+        "missing_knowledge": []
+      },
+      "latency_ms": 3141.7,
+      "api_calls": [
+        {
+          "stage": "validation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 1064.9,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 1183,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 39,
+          "reasoning_tokens": 0,
+          "total_tokens": 1222,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0005356,
+          "estimated_cost_eur": 0.0004775746767721801
+        },
+        {
+          "stage": "query_embedding",
+          "kind": "embeddings",
+          "requested_model": "text-embedding-3-small",
+          "response_model": "text-embedding-3-small",
+          "service_tier": null,
+          "latency_ms": 188.0,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 18,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 0,
+          "reasoning_tokens": 0,
+          "total_tokens": 18,
+          "pricing_model": "text-embedding-3-small",
+          "estimated_cost_usd": 3.6e-07,
+          "estimated_cost_eur": 3.209986625055729e-07
+        },
+        {
+          "stage": "answer_generation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 1872.8,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 2176,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 120,
+          "reasoning_tokens": 0,
+          "total_tokens": 2296,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0010624,
+          "estimated_cost_eur": 0.0009473027195720018
+        }
+      ],
+      "error_type": null,
+      "error_status": null,
+      "validation_issues": [],
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-31",
+      "inferred_action": "escalate",
+      "answer": "Pode enviar a sua sugestão para permitir comparar lado a lado os anúncios guardados nos favoritos através do chat de suporte ou do email equipa@custojusto.pt. Recomendamos usar o formulário de 'Sugestões' para que a equipa responsável possa analisar a sua proposta.\n\nFormulário recomendado: [Sugestões](https://www.custojusto.pt/ajuda-contacto?section=10)",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "",
+        "standalone_question": "Como posso enviar uma sugestão para permitir comparar lado a lado os anúncios guardados nos favoritos no CustoJusto?",
+        "needs_clarification": false
+      },
+      "structured_answer": {
+        "action": "escalate",
+        "relevant_contact_form": "sugestoes",
+        "sources": [
+          {
+            "chunk_id": "faq-060",
+            "question": "Como posso sugerir melhorias para a plataforma?"
+          }
+        ],
+        "topics": [
+          "sugestão de melhoria",
+          "comparação de anúncios favoritos"
+        ],
+        "confidence_score": "high",
+        "missing_info": [],
+        "suggested_response": "Pode enviar a sua sugestão para permitir comparar lado a lado os anúncios guardados nos favoritos através do chat de suporte ou do email equipa@custojusto.pt. Recomendamos usar o formulário de 'Sugestões' para que a equipa responsável possa analisar a sua proposta.",
+        "missing_knowledge": []
+      },
+      "latency_ms": 3862.0,
+      "api_calls": [
+        {
+          "stage": "validation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 1073.7,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 1180,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 48,
+          "reasoning_tokens": 0,
+          "total_tokens": 1228,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0005488,
+          "estimated_cost_eur": 0.0004893446277307178
+        },
+        {
+          "stage": "query_embedding",
+          "kind": "embeddings",
+          "requested_model": "text-embedding-3-small",
+          "response_model": "text-embedding-3-small",
+          "service_tier": null,
+          "latency_ms": 201.8,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 32,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 0,
+          "reasoning_tokens": 0,
+          "total_tokens": 32,
+          "pricing_model": "text-embedding-3-small",
+          "estimated_cost_usd": 6.4e-07,
+          "estimated_cost_eur": 5.706642888987962e-07
+        },
+        {
+          "stage": "answer_generation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 2569.9,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 1920,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 132,
+          "reasoning_tokens": 0,
+          "total_tokens": 2052,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0009792,
+          "estimated_cost_eur": 0.0008731163620151583
+        }
+      ],
+      "error_type": null,
+      "error_status": null,
+      "validation_issues": [],
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    },
+    {
+      "case_id": "case-32",
+      "inferred_action": "escalate",
+      "answer": "Para solicitar uma entrevista a um porta-voz do CustoJusto como jornalista, deve utilizar o canal oficial de contactos para imprensa e publicidade. Recomendo que utilize o formulário 'Imprensa e Publicidade' disponível no website do CustoJusto para este tipo de pedido, já que é o meio adequado para contacto institucional e solicitações de entrevistas.\n\nFormulário recomendado: [Imprensa e Publicidade](https://www.custojusto.pt/ajuda-contacto?section=14)",
+      "validation": {
+        "is_valid_question": true,
+        "suggested_response": "Para contactar o departamento de Imprensa do CustoJusto, utilize o formulário específico para 'Imprensa e Publicidade' no nosso website. Estou disponível para ajudar com mais informações, se precisar.",
+        "standalone_question": "Qual é o canal de contacto para imprensa do CustoJusto para solicitar uma entrevista a um porta-voz?",
+        "needs_clarification": false
+      },
+      "structured_answer": {
+        "action": "escalate",
+        "relevant_contact_form": "imprensa_publicidade",
+        "sources": [
+          {
+            "chunk_id": "faq-033",
+            "question": "Para que serve o chat do CustoJusto?"
+          },
+          {
+            "chunk_id": "faq-002",
+            "question": "Quanto custa publicar um anúncio no CustoJusto.pt?"
+          },
+          {
+            "chunk_id": "faq-034",
+            "question": "Como funciona o chat?"
+          },
+          {
+            "chunk_id": "faq-014",
+            "question": "Como faço para localizar o meu anúncio?"
+          }
+        ],
+        "topics": [
+          "contacto imprensa",
+          "entrevista",
+          "porta-voz CustoJusto"
+        ],
+        "confidence_score": "high",
+        "missing_info": [],
+        "suggested_response": "Para solicitar uma entrevista a um porta-voz do CustoJusto como jornalista, deve utilizar o canal oficial de contactos para imprensa e publicidade. Recomendo que utilize o formulário 'Imprensa e Publicidade' disponível no website do CustoJusto para este tipo de pedido, já que é o meio adequado para contacto institucional e solicitações de entrevistas.",
+        "missing_knowledge": []
+      },
+      "latency_ms": 4527.9,
+      "api_calls": [
+        {
+          "stage": "validation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 1629.0,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 1176,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 89,
+          "reasoning_tokens": 0,
+          "total_tokens": 1265,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.0006128,
+          "estimated_cost_eur": 0.0005464110566205974
+        },
+        {
+          "stage": "query_embedding",
+          "kind": "embeddings",
+          "requested_model": "text-embedding-3-small",
+          "response_model": "text-embedding-3-small",
+          "service_tier": null,
+          "latency_ms": 187.2,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 28,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 0,
+          "reasoning_tokens": 0,
+          "total_tokens": 28,
+          "pricing_model": "text-embedding-3-small",
+          "estimated_cost_usd": 5.6e-07,
+          "estimated_cost_eur": 4.993312527864467e-07
+        },
+        {
+          "stage": "answer_generation",
+          "kind": "responses",
+          "requested_model": "gpt-4.1-mini",
+          "response_model": "gpt-4.1-mini-2025-04-14",
+          "service_tier": "default",
+          "latency_ms": 2695.0,
+          "error_type": null,
+          "validation_issues": [],
+          "input_tokens": 2202,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 207,
+          "reasoning_tokens": 0,
+          "total_tokens": 2409,
+          "pricing_model": "gpt-4.1-mini",
+          "estimated_cost_usd": 0.001212,
+          "estimated_cost_eur": 0.0010806954971020954
+        }
+      ],
+      "error_type": null,
+      "error_status": null,
+      "validation_issues": [],
+      "review": {
+        "reviewer": null,
+        "unsupported_claims": null,
+        "follow_up_relevant": null,
+        "notes": ""
+      }
+    }
+  ],
+  "metrics": {
+    "cases_completed": 22,
+    "errors": 0,
+    "action_accuracy": {
+      "passed": 21,
+      "total": 22,
+      "rate": 0.9545454545454546
+    },
+    "escalation_recall": {
+      "passed": 7,
+      "total": 7,
+      "rate": 1.0
+    },
+    "correct_escalation_destination": {
+      "passed": 7,
+      "total": 7,
+      "rate": 1.0
+    },
+    "answers_when_non_answer_expected": {
+      "passed": 0,
+      "total": 13,
+      "rate": 0.0
+    },
+    "expected_source_group_coverage": {
+      "passed": 9,
+      "total": 9,
+      "rate": 1.0
+    },
+    "answer_citation_id_validity": {
+      "passed": 9,
+      "total": 9,
+      "rate": 1.0
+    },
+    "unsupported_claim_rate_human": {
+      "passed": 0,
+      "total": 0,
+      "rate": null
+    },
+    "follow_up_relevance_human": {
+      "passed": 0,
+      "total": 0,
+      "rate": null
+    },
+    "category_accuracy": null,
+    "confusion": {
+      "answer": {
+        "answer": 9
+      },
+      "clarify": {
+        "clarify": 2,
+        "escalate": 1
+      },
+      "escalate": {
+        "escalate": 7
+      },
+      "reject": {
+        "reject": 3
+      }
+    },
+    "mean_latency_ms": 3157.3636363636365,
+    "p95_latency_ms": 4527.9,
+    "usage": {
+      "api_calls": 56,
+      "calls_with_complete_usage": 56,
+      "calls_with_estimated_cost": 56,
+      "calls_with_estimated_cost_eur": 56,
+      "input_tokens": 63463,
+      "cached_input_tokens": 0,
+      "cache_write_tokens": 0,
+      "output_tokens": 3616,
+      "total_tokens": 67079,
+      "recorded_total_tokens_subtotal": 67079,
+      "estimated_cost_usd": 0.03099828,
+      "known_cost_usd_subtotal": 0.03099828,
+      "estimated_cost_eur": 0.027640017833,
+      "known_cost_eur_subtotal": 0.027640017833,
+      "api_latency_ms": 68983.9,
+      "instrumented_cases": 22,
+      "by_stage": {
+        "answer_generation": {
+          "api_calls": 17,
+          "calls_with_complete_usage": 17,
+          "calls_with_estimated_cost": 17,
+          "calls_with_estimated_cost_eur": 17,
+          "input_tokens": 37481,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 2440,
+          "total_tokens": 39921,
+          "recorded_total_tokens_subtotal": 39921,
+          "estimated_cost_usd": 0.0188964,
+          "known_cost_usd_subtotal": 0.0188964,
+          "estimated_cost_eur": 0.016849219795,
+          "known_cost_eur_subtotal": 0.016849219795,
+          "api_latency_ms": 37068.8
+        },
+        "query_embedding": {
+          "api_calls": 17,
+          "calls_with_complete_usage": 17,
+          "calls_with_estimated_cost": 17,
+          "calls_with_estimated_cost_eur": 17,
+          "input_tokens": 454,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 454,
+          "recorded_total_tokens_subtotal": 454,
+          "estimated_cost_usd": 9.08e-06,
+          "known_cost_usd_subtotal": 9.08e-06,
+          "estimated_cost_eur": 8.0963e-06,
+          "known_cost_eur_subtotal": 8.0963e-06,
+          "api_latency_ms": 4665.5
+        },
+        "validation": {
+          "api_calls": 22,
+          "calls_with_complete_usage": 22,
+          "calls_with_estimated_cost": 22,
+          "calls_with_estimated_cost_eur": 22,
+          "input_tokens": 25528,
+          "cached_input_tokens": 0,
+          "cache_write_tokens": 0,
+          "output_tokens": 1176,
+          "total_tokens": 26704,
+          "recorded_total_tokens_subtotal": 26704,
+          "estimated_cost_usd": 0.0120928,
+          "known_cost_usd_subtotal": 0.0120928,
+          "estimated_cost_eur": 0.010782701739,
+          "known_cost_eur_subtotal": 0.010782701739,
+          "api_latency_ms": 27249.6
+        }
+      }
+    }
+  }
+}

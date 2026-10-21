@@ -1,4 +1,58 @@
-# Historical development baseline (dataset v1.0)
+# Published evaluation baselines
+
+## Current development baseline
+
+The current published baseline is **development-triage-07-codex**, run on
+2026-10-21 against the 22 development cases in dataset v1.1. It is preserved as
+an inspectable measurement, including its known failures, not a production
+accuracy claim.
+
+- [Full report](current-development.md) and [original raw results](current-development.json).
+- [Exact dataset used for that run](triage-cases-v1.1-run-07.json).
+- [Case-by-case qualitative review](current-development-review.md) and
+  [structured review judgments](current-development-review.json), authored by Codex (AI).
+
+| Automatic check | Current baseline |
+|---|---:|
+| Action accuracy | 21/22 (95.5%) |
+| Escalation recall | 7/7 (100%) |
+| Correct escalation destination | 7/7 (100%) |
+| Answers when non-answer expected | 0/13 (0%) |
+| Expected source group coverage | 9/9 (100%) |
+| Answer citation ID validity | 9/9 (100%) |
+| Runtime errors | 0/22 |
+| Mean / p95 pipeline latency | 3.16 s / 4.53 s |
+| Provider-reported tokens | 67,079 |
+| Estimated cost, saved rates | EUR 0.02764002 |
+
+The qualitative AI review found **12 acceptable outputs, 7 acceptable with
+notes, and 3 needing changes**: overly broad policy advice in case-07, premature
+escalation in case-13, and an unsupported forwarding promise in case-18. Correct
+routes can still carry irrelevant citations. The review also distinguishes
+ignored internal validation text from what the user actually sees.
+
+The dataset owner has since approved the labels as **André Faria**. Only approval
+metadata changed; all case content is identical to the archived run snapshot.
+The original report retains its execution-time `draft_for_human_review` status
+and dataset hash. Dataset-label approval does not make the AI response review an
+independent human review. Human-review metrics therefore remain N/A.
+
+Regenerate this preserved report without API calls using its matching snapshot:
+
+```bash
+.venv/bin/python evaluate.py --split development \
+  --cases docs/evaluations/triage-cases-v1.1-run-07.json \
+  --report-from docs/evaluations/current-development.json \
+  --output reports/current-development-regenerated
+```
+
+This requires the matching FAQ/contact content, as with other evaluations. A
+fresh run using the working dataset would record its new approval hash; do not
+change the old metadata to make those hashes appear identical. The 12-case
+holdout remains unrun. The smaller historical baseline below uses a different
+dataset/cohort and is not a controlled like-for-like comparison.
+
+## Historical development baseline (dataset v1.0)
 
 The [full report](baseline-development.md) and [raw results](baseline-development.json)
 record a live run of the 20 development cases on 2026-10-21 with the configured
@@ -7,9 +61,9 @@ record a live run of the 20 development cases on 2026-10-21 with the configured
 This run predates the ten-category contact catalog and dataset v1.1 (34 cases).
 The [original dataset](triage-cases-v1.json) is preserved byte-for-byte with the
 hash recorded in the results. The raw JSON and Markdown report are unchanged;
-they are not scores for today's prompts or expanded dataset. A fresh development
-run is needed after review of the current labels. The current holdout has 12
-cases and remains unrun.
+they are not scores for today's prompts or expanded dataset. The run-07 baseline
+above records the current implementation. The current holdout has 12 cases and
+remains unrun.
 
 New evaluation runs record per-call token usage and estimated EUR costs (with
 underlying USD estimates retained in JSON). This
@@ -36,7 +90,7 @@ Category classification, unsupported factual claims, and follow-up relevance
 are not scored automatically. The latter two need a named review of the text
 and evidence. All human-review judgments remain pending in the raw results.
 
-## Observations for the next improvement step
+### Observations from the historical run
 
 These observations are an assistant analysis of outputs, not completed human
 review annotations:

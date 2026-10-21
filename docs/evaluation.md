@@ -9,10 +9,11 @@ the initial baseline predates that update and remains historical.
 ## Dataset and label ownership
 
 `data/evaluations/triage_cases.json` (v1.1) contains 34 synthetic Portuguese support
-requests, authored against the local FAQ corpus. These are **assistant-authored
-draft labels**, not production conversations or independently human-reviewed
-ground truth. The project owner should review the expected actions, contact
-destinations and rubrics before treating the scores as authoritative.
+requests, authored against the local FAQ corpus. They started as assistant-authored
+drafts; owner approval is recorded in the working file's `label_status` and
+`reviewed_by`. They are synthetic, not production conversations or an independently
+validated benchmark. Approval of expected actions, contact destinations and
+rubrics is separate from judging the generated responses.
 
 There are 22 development cases and 12 holdout cases. The cases include 14 expected
 answers, 5 clarifications, 11 escalations and 4 rejections. Four cases provide
@@ -270,6 +271,14 @@ or detect every unsupported claim. A high model confidence is not a calibrated
 probability and does not change the expected labels.
 
 ## Human review
+
+The [current published baseline](evaluations/README.md) preserves run 07 and its
+matching execution-time dataset. A separate [qualitative AI review](evaluations/current-development-review.md)
+assesses all 22 responses against their rubrics and evidence. It is attributed
+to Codex, not a human reviewer: it does not populate the original `review` fields
+or turn the `_human` metrics into AI-graded scores. The working dataset's later
+owner approval only changed approval metadata, not the cases or expected labels.
+The raw run retains its original draft status and dataset hash for provenance.
 
 Each result includes an initially empty `review` object. A reviewer can supply
 their name, `unsupported_claims`, `follow_up_relevant`, and notes after comparing
