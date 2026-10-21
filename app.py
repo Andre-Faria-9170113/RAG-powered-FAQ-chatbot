@@ -14,6 +14,7 @@ from contact_forms import CONTACT_FORMS, CONTACT_LABELS, reload_contact_forms
 from refresh_website_data import refresh as refresh_website_data
 from chat_bot import (
     FAQResponse,
+    RequestCategory,
     answer_user_question,
     compact_history_if_needed,
     conversation_history,
@@ -75,15 +76,24 @@ def render_message(message: dict) -> None:
             st.error(content)
         else:
             st.markdown(content)
-        if details := message.get("details"):
-            render_answer_details(FAQResponse.model_validate(details))
+        details = message.get("details")
+        render_answer_details(
+            FAQResponse.model_validate(details) if details else None,
+            category=message.get("category"),
+        )
 
 
-def render_answer_details(answer: FAQResponse | None) -> None:
-    if answer is None:
+def render_answer_details(
+    answer: FAQResponse | None, *, category: RequestCategory | None = None,
+) -> None:
+    if answer is None and category is None:
         return
 
     with st.expander("Detalhes da resposta", expanded=False):
+        if category is not None:
+            st.write(f"Categoria: `{category}`")
+        if answer is None:
+            return
         labels = {"answer": "Resposta", "clarify": "Clarificação", "escalate": "Encaminhamento"}
         st.write(f"Decisão: {labels[answer.action]}")
         st.write(f"Confiança: `{answer.confidence_score}`")
@@ -131,15 +141,17 @@ def answer_prompt(prompt: str) -> None:
     st.session_state.messages.append({"role": "user", "content": prompt})
     render_message({"role": "user", "content": prompt})
     failed = False
+    category = None
 
     with st.chat_message("assistant"):
         with st.spinner("A validar o pedido e a consultar as FAQs..."):
             try:
-                answer, structured_answer, _validation = answer_user_question(
+                answer, structured_answer, validation = answer_user_question(
                     prompt,
                     st.session_state.context_history,
                     client=cached_client(),
                 )
+                category = validation.category
             except Exception as error:
                 if isinstance(error, ValidationError):
                     LOGGER.error("Could not answer the current turn: %s", validation_issues(error))
@@ -156,13 +168,15 @@ def answer_prompt(prompt: str) -> None:
             st.error(answer)
         else:
             st.markdown(answer)
-            render_answer_details(structured_answer)
+            render_answer_details(structured_answer, category=category)
 
     assistant_message = {"role": "assistant", "content": answer}
     if failed:
         assistant_message["error"] = True
     if structured_answer is not None:
         assistant_message["details"] = structured_answer.model_dump()
+    if not failed:
+        assistant_message["category"] = category
     st.session_state.messages.append(assistant_message)
 
     if failed:

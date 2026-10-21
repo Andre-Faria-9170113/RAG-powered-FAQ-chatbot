@@ -203,6 +203,46 @@ def response_body(parsed, usage):
 
 class EvaluationUsageTest(unittest.TestCase):
     @patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"})
+    def test_sdk_repairs_missing_unknown_or_inconsistent_categories_without_retrieval(self):
+        corrected = {
+            "is_valid_question": True, "needs_clarification": True,
+            "category": "pagamentos_servicos", "suggested_response": "O que aconteceu com o pagamento?",
+            "standalone_question": "",
+        }
+        missing = {key: value for key, value in corrected.items() if key != "category"}
+        for invalid, code in (
+            (missing, "missing"),
+            (corrected | {"category": "private-invalid-category"}, "literal_error"),
+            (corrected | {"category": "fora_ambito"}, "category_scope_mismatch"),
+        ):
+            with self.subTest(code=code):
+                requests = []
+
+                def respond(request):
+                    requests.append(json.loads(request.content))
+                    parsed = invalid if len(requests) == 1 else corrected
+                    return httpx.Response(200, json=response_body(parsed, response().usage.model_dump()))
+
+                sample = EvaluationCase(
+                    id="payment", split="development", category="pagamentos_servicos",
+                    question="Tenho um problema com um pagamento.", expected_action="clarify",
+                    rubric="Clarify the payment symptom without assuming a charge or refund.",
+                )
+                with (
+                    OpenAI(api_key="test-key", max_retries=0, http_client=httpx.Client(transport=httpx.MockTransport(respond))) as client,
+                    patch("chat_bot.ensure_vector_store") as index,
+                ):
+                    result = run_case(sample, client)
+                self.assertEqual(result.inferred_action, "clarify")
+                self.assertEqual(result.validation.category, "pagamentos_servicos")
+                self.assertEqual([call.stage for call in result.api_calls], ["validation", "validation_repair"])
+                self.assertEqual(result.api_calls[0].validation_issues[0].code, code)
+                self.assertIn(code, requests[1]["instructions"])
+                self.assertNotIn("private-invalid-category", requests[1]["instructions"])
+                self.assertEqual(requests[0]["input"], requests[1]["input"])
+                index.assert_not_called()
+
+    @patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"})
     def test_validation_sdk_early_returns_and_invalid_states_never_retrieve(self):
         scenarios = [
             ("clarify", {"is_valid_question": True, "needs_clarification": True,
@@ -220,6 +260,7 @@ class EvaluationUsageTest(unittest.TestCase):
             rubric="Ask which option the user means without retrieving.",
         )
         for expected, parsed in scenarios:
+            parsed["category"] = "indeterminado" if parsed["is_valid_question"] else "fora_ambito"
             with self.subTest(expected=expected, parsed=parsed):
                 requests = []
 
@@ -247,6 +288,7 @@ class EvaluationUsageTest(unittest.TestCase):
                     self.assertEqual(result.answer, parsed["suggested_response"])
                     self.assertTrue(result.answer.strip())
                     self.assertIsNotNone(result.validation)
+                    self.assertEqual(result.validation.category, parsed["category"])
                     self.assertIsNone(result.structured_answer)
                 index.assert_not_called()
                 retrieve.assert_not_called()
@@ -257,9 +299,9 @@ class EvaluationUsageTest(unittest.TestCase):
         requests = []
         original = "E aquela opção, como funciona? private-user-context"
         invalid = {"is_valid_question": False, "needs_clarification": True,
-                   "suggested_response": "private-model-output", "standalone_question": ""}
+                   "category": "fora_ambito", "suggested_response": "private-model-output", "standalone_question": ""}
         corrected = {"is_valid_question": True, "needs_clarification": True,
-                     "suggested_response": "A que opção se refere?", "standalone_question": ""}
+                     "category": "indeterminado", "suggested_response": "A que opção se refere?", "standalone_question": ""}
 
         def respond(request):
             body = json.loads(request.content)
@@ -304,7 +346,7 @@ class EvaluationUsageTest(unittest.TestCase):
                 invalid = {"action": action, "confidence_score": "high", "suggested_response": "private-model-output",
                            "relevant_contact_form": route, "missing_info": missing, "missing_knowledge": [], "sources": [], "topics": []}
                 corrected = invalid | {"action": "escalate", "missing_info": [], "suggested_response": "Contacte a equipa."}
-                parsed = [{"is_valid_question": True, "needs_clarification": False, "suggested_response": "", "standalone_question": sample.question}, invalid, corrected]
+                parsed = [{"is_valid_question": True, "needs_clarification": False, "category": route, "suggested_response": "", "standalone_question": sample.question}, invalid, corrected]
 
                 def respond(request):
                     requests.append(json.loads(request.content))
@@ -343,7 +385,7 @@ class EvaluationUsageTest(unittest.TestCase):
                     "usage": {"prompt_tokens": tokens, "total_tokens": tokens},
                 })
             if "Validas mensagens" in body["instructions"]:
-                parsed = {"is_valid_question": True, "suggested_response": "", "standalone_question": "Example request", "needs_clarification": False}
+                parsed = {"is_valid_question": True, "category": "outros", "suggested_response": "", "standalone_question": "Example request", "needs_clarification": False}
                 inputs, cached, outputs = 1000, 0, 20
             else:
                 parsed = {"action": "escalate", "sources": [], "topics": [], "confidence_score": "low", "missing_info": [], "missing_knowledge": [], "relevant_contact_form": "outros", "suggested_response": "Contact support."}
@@ -392,6 +434,9 @@ class EvaluationUsageTest(unittest.TestCase):
             elif "instructions" in request:
                 schema = request["text"]["format"]["schema"]
                 self.assertEqual(list(schema["properties"])[:2], ["is_valid_question", "needs_clarification"])
+                self.assertIn("category", schema["required"])
+                self.assertEqual(set(schema["properties"]["category"]["enum"]), set(bot.RequestCategory.__args__))
+                self.assertNotIn("none", schema["properties"]["category"]["enum"])
         payload = {"metadata": run_metadata(load_dataset(), DATASET_PATH, "development"), "results": [cold.model_dump()]}
         report = render_report(load_dataset(), [sample], payload)
         self.assertIn("corpus_embedding", report)

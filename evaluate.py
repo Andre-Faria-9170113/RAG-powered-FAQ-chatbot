@@ -53,6 +53,7 @@ class _RecordedQuestionValidation(StrictModel):
     suggested_response: str
     standalone_question: str = ""
     needs_clarification: bool = False
+    category: bot.RequestCategory | None = None
 
 
 class HistoryMessage(StrictModel):
@@ -63,7 +64,7 @@ class HistoryMessage(StrictModel):
 class EvaluationCase(StrictModel):
     id: str = Field(min_length=1)
     split: Literal["development", "holdout"]
-    category: str = Field(min_length=1)
+    category: bot.RequestCategory
     question: str = Field(min_length=1)
     history: list[HistoryMessage] = Field(default_factory=list)
     expected_action: Action
@@ -198,7 +199,10 @@ def ratio(passed: int, total: int) -> dict:
     return {"passed": passed, "total": total, "rate": passed / total if total else None}
 
 
-def summarize(cases: list[EvaluationCase], results: list[CaseResult]) -> dict:
+def summarize(
+    cases: list[EvaluationCase], results: list[CaseResult], *,
+    category_classification_enabled: bool = False,
+) -> dict:
     by_id = {case.id: case for case in cases}
     if len({result.case_id for result in results}) != len(results):
         raise ValueError("Duplicate case results cannot be scored.")
@@ -208,6 +212,7 @@ def summarize(cases: list[EvaluationCase], results: list[CaseResult]) -> dict:
     confusion: dict[str, Counter] = {action: Counter() for action in get_args(Action)}
     matched = routed = escalated = false_answers = source_hits = source_groups = 0
     expected_escalations = non_answers = citation_passes = answer_count = 0
+    category_matches = category_predictions = 0
     judged_support: list[bool] = []
     judged_followups: list[bool] = []
     for result in results:
@@ -218,6 +223,9 @@ def summarize(cases: list[EvaluationCase], results: list[CaseResult]) -> dict:
         expected_escalations += case.expected_action == "escalate"
         non_answers += case.expected_action != "answer"
         false_answers += case.expected_action != "answer" and action == "answer"
+        if result.validation is not None and result.validation.category is not None:
+            category_predictions += 1
+            category_matches += result.validation.category == case.category
         answer = result.structured_answer
         cited = {source.chunk_id for source in answer.sources} if answer else set()
         if case.expected_action == "escalate":
@@ -257,7 +265,10 @@ def summarize(cases: list[EvaluationCase], results: list[CaseResult]) -> dict:
         "answer_citation_id_validity": ratio(citation_passes, answer_count),
         "unsupported_claim_rate_human": ratio(sum(judged_support), len(judged_support)),
         "follow_up_relevance_human": ratio(sum(judged_followups), len(judged_followups)),
-        "category_accuracy": None,
+        "category_accuracy": (
+            ratio(category_matches, len(results))
+            if category_classification_enabled or category_predictions else None
+        ),
         "confusion": {action: dict(counts) for action, counts in confusion.items()},
         "mean_latency_ms": sum(latency) / len(latency) if latency else None,
         "p95_latency_ms": latency[math.ceil(len(latency) * 0.95) - 1] if latency else None,
@@ -279,7 +290,10 @@ def format_value(value, decimals: int | None = None) -> str:
 
 def render_report(dataset: EvaluationDataset, cases: list[EvaluationCase], payload: dict) -> str:
     results = [CaseResult.model_validate(item) for item in payload["results"]]
-    metrics = summarize(cases, results)
+    metrics = summarize(
+        cases, results,
+        category_classification_enabled=payload["metadata"].get("category_classification_version") == 1,
+    )
     lines = [
         "# Triage evaluation", "",
         f"Run: `{payload['metadata']['started_at_utc']}`; split: `{payload['metadata']['split']}`.",
@@ -291,15 +305,20 @@ def render_report(dataset: EvaluationDataset, cases: list[EvaluationCase], paylo
             if payload["metadata"].get("triage_decision_version") == 2
             else "Historical actions retain their saved inference from structured flags; they have not been rescored using explicit decisions."
         ),
-        "Category accuracy is N/A: the chatbot has no dedicated category output yet.", "",
+        (
+            "Categories use the validation-stage prediction, independent of action and contact destination; missing predictions count as failures."
+            if metrics["category_accuracy"] is not None
+            else "Category accuracy is N/A: no category predictions were recorded in this historical run."
+        ), "",
         "| Automatic check | Result |", "|---|---|",
     ]
     for key in (
         "action_accuracy", "escalation_recall", "correct_escalation_destination",
         "answers_when_non_answer_expected", "expected_source_group_coverage",
-        "answer_citation_id_validity",
+        "answer_citation_id_validity", "category_accuracy",
     ):
-        lines.append(f"| {key} | {format_metric(metrics[key])} |")
+        metric = metrics[key]
+        lines.append(f"| {key} | {format_metric(metric) if metric is not None else 'N/A (not recorded)'} |")
     lines.extend([
         "", "Lower is better for answers_when_non_answer_expected; higher is better for the other automatic checks.",
         "Runtime errors count as action failures and missed required escalations; expected evidence gets zero credit.",
@@ -359,6 +378,7 @@ def render_report(dataset: EvaluationDataset, cases: list[EvaluationCase], paylo
         lines.extend([
             f"### {case.id}: {'action match' if matched else 'ACTION MISMATCH'}", "",
             f"Category label: `{case.category}`; critical: `{case.critical}`.",
+            f"Predicted category: `{result.validation.category if result.validation and result.validation.category is not None else 'not recorded'}`.",
             f"Expected action: `{case.expected_action}`; inferred: `{result.inferred_action}`.",
             f"Expected contact: `{case.expected_contact_form or 'none'}`.",
             f"Elapsed case latency: {result.latency_ms:.1f} ms.",
@@ -453,7 +473,8 @@ def run_metadata(
         "reporting_currency": "EUR",
         "usage_tracking_version": 2,
         "triage_decision_version": 2,
-        "validation_contract_version": 4,
+        "validation_contract_version": 5,
+        "category_classification_version": 1,
         "max_structured_repair_attempts": 1,
         "git_revision": revision,
         "label_status": dataset.label_status,
@@ -467,7 +488,10 @@ def write_reports(
 ) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     results = [CaseResult.model_validate(item) for item in payload["results"]]
-    payload["metrics"] = summarize(cases, results)
+    payload["metrics"] = summarize(
+        cases, results,
+        category_classification_enabled=payload["metadata"].get("category_classification_version") == 1,
+    )
     output.with_suffix(".json").write_text(
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )

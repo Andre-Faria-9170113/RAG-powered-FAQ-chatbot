@@ -65,11 +65,20 @@ Generated local vector data is stored in `.chroma/` and ignored by git.
 
 ## Conversation flow
 
-The first structured LLM call validates the request in context and resolves
-follow-ups into a standalone question. Both embedding search and lexical search
-use that resolved question. A rejected or genuinely ambiguous request returns
-before indexing or embedding. The answer uses retrieved FAQs as evidence;
+The first structured LLM call validates the request in context, classifies its
+category, and resolves follow-ups into a standalone question. Both embedding
+search and lexical search use that resolved question. A rejected or genuinely
+ambiguous request returns before indexing or embedding. The answer uses retrieved FAQs as evidence;
 conversation history only helps interpret the request.
+
+`QuestionValidation.category` identifies the request topic independently of its
+action or contact destination, with no additional model call. It uses the ten
+official contact-topic keys plus `indeterminado` for an unknown topic and
+`fora_ambito` for rejected requests. A known payment/ad topic can still require
+clarification. Category appears in response details, including early replies,
+and fresh evaluations score `category_accuracy` against the existing labels.
+Historical runs without category predictions remain N/A; urgency is not yet
+classified.
 
 Answer generation also receives the original message so a search rewrite cannot
 discard troubleshooting already attempted or a request for human intervention.

@@ -43,6 +43,21 @@ TOP_K = int(os.getenv("TOP_K", "4"))
 LEXICAL_TOP_K = int(os.getenv("LEXICAL_TOP_K", "4"))
 HISTORY_MAX_TURNS = int(os.getenv("HISTORY_MAX_TURNS", "5"))
 
+RequestCategory = Literal[
+    "problemas_anuncios",
+    "pagamentos_servicos",
+    "contactos_anuncios",
+    "problemas_tecnicos",
+    "sugestoes",
+    "outros",
+    "imprensa_publicidade",
+    "versao_mobile",
+    "acesso_telefones",
+    "conta_utilizador",
+    "indeterminado",
+    "fora_ambito",
+]
+
 STOPWORDS = {
     "a",
     "as",
@@ -105,6 +120,9 @@ class QuestionValidation(BaseModel):
         default=False,
         description="True when a valid request lacks necessary intent, symptoms or an identifiable reference.",
     )
+    category: RequestCategory = Field(
+        description="Request topic, independent of action or contact destination; use indeterminado only for an unknown topic and fora_ambito for rejected requests.",
+    )
     suggested_response: str = Field(
         description="A nonempty reply for rejection or clarification; empty when proceeding to retrieval.",
     )
@@ -121,6 +139,8 @@ class QuestionValidation(BaseModel):
                 raise PydanticCustomError("early_reply_missing", "A rejection or clarification requires a nonempty reply.")
         elif not self.standalone_question.strip():
             raise PydanticCustomError("retrieval_question_missing", "A request proceeding to retrieval requires a standalone question.")
+        if (self.category == "fora_ambito") != (not self.is_valid_question):
+            raise PydanticCustomError("category_scope_mismatch", "Only rejected requests must use fora_ambito.")
         return self
 
 
@@ -178,7 +198,9 @@ def _parse_with_repair(
         "Se for preciso esclarecer intenção, sintomas ou uma referência, usa "
         "is_valid_question=true, needs_clarification=true, standalone_question='' "
         "e uma pergunta não vazia. Uma recusa deve ter needs_clarification=false "
-        "e uma resposta não vazia."
+        "e uma resposta não vazia. Preenche category em todas as respostas: "
+        "fora_ambito apenas nas recusas, indeterminado apenas se o tópico não "
+        "puder ser identificado, ou a categoria específica conhecida."
         if text_format is QuestionValidation
         else "Para clarify, pede apenas detalhes necessários em missing_info e usa "
         "relevant_contact_form='none'. Para encaminhamento humano, usa escalate "
@@ -400,6 +422,24 @@ def validate_question(
             "needs_clarification=false, preenche standalone_question e devolve "
             "suggested_response=''; não respondas a factos nem prometas contactar "
             "a equipa nesta fase. "
+            "Classifica também o tópico principal do pedido em category, mesmo "
+            "numa clarificação ou recusa. Usa as chaves dos assuntos oficiais "
+            "abaixo como categorias, sem que isso implique encaminhamento. "
+            "Classifica o pedido atual com o contexto necessário do histórico; "
+            "um novo tópico explícito prevalece sobre o anterior. Aplica o "
+            "assunto mais específico: falhas na inserção de imagens são "
+            "problemas_tecnicos; mensagens, chat e contacto com anunciantes são "
+            "contactos_anuncios; destaques, serviços pagos e faturas são "
+            "pagamentos_servicos; gestão e acesso à conta são conta_utilizador. "
+            "Usa outros para um pedido no âmbito cujo tópico é conhecido mas "
+            "não corresponde a outro assunto, incluindo reclamações do apoio "
+            "ou perguntas gerais sobre a plataforma. Usa indeterminado apenas "
+            "quando o tópico não é identificável, como 'E aquela opção?' sem "
+            "contexto. Se sabes que é um problema num anúncio ou pagamento mas "
+            "faltam sintomas, mantém a categoria específica e pede clarificação; "
+            "não uses indeterminado só por faltar esse detalhe. Nas recusas "
+            "(fora do âmbito ou proibidas), usa sempre fora_ambito. A categoria "
+            "não altera as regras de validação, pesquisa ou encaminhamento. "
             "Escreve suggested_response em português europeu, com no máximo duas frases."
             f"\nAssuntos oficiais de contacto:\n{contact_forms.CONTACT_ROUTING_CONTEXT}"
         ),

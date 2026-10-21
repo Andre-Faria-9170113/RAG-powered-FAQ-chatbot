@@ -91,6 +91,62 @@ class DatasetTest(unittest.TestCase):
 
 
 class EvaluationTest(unittest.TestCase):
+    def test_category_accuracy_uses_predictions_not_contact_forms_or_topics(self) -> None:
+        samples = [
+            case("answered"),
+            case("clarified", "clarify", category="pagamentos_servicos"),
+            case("rejected", "reject", category="fora_ambito"),
+            case("misclassified", "escalate", expected_contact_form="problemas_anuncios"),
+            case("failed"),
+        ]
+        validations = [
+            QuestionValidation(is_valid_question=True, category="problemas_anuncios", suggested_response="", standalone_question="Pergunta"),
+            QuestionValidation(is_valid_question=True, category="pagamentos_servicos", needs_clarification=True, suggested_response="O que aconteceu?"),
+            QuestionValidation(is_valid_question=False, category="fora_ambito", suggested_response="Recusa"),
+            QuestionValidation(is_valid_question=True, category="outros", suggested_response="", standalone_question="Pergunta"),
+        ]
+        results = [
+            CaseResult(case_id=sample.id, inferred_action=sample.expected_action, validation=validation.model_dump())
+            for sample, validation in zip(samples, validations)
+        ]
+        results[0].structured_answer = faq_answer(topics=["unrelated topic"])
+        results[3].structured_answer = faq_answer(action="escalate", relevant_contact_form="problemas_anuncios")
+        results.append(CaseResult(case_id="failed", inferred_action="error"))
+        metrics = summarize(samples, results)
+        self.assertEqual(metrics["category_accuracy"], {"passed": 3, "total": 5, "rate": 0.6})
+        self.assertEqual(metrics["correct_escalation_destination"]["rate"], 1)
+        payload = {
+            "metadata": {"started_at_utc": "test", "split": "development", "generation_model": "test"},
+            "results": [result.model_dump() for result in results],
+        }
+        markdown = render_report(load_dataset(), samples, payload)
+        self.assertIn("| category_accuracy | 3/5 (60.0%) |", markdown)
+        self.assertIn("Predicted category: `pagamentos_servicos`", markdown)
+
+    def test_new_category_run_with_only_errors_scores_zero_not_historical_na(self) -> None:
+        sample = case()
+        result = CaseResult(case_id=sample.id, inferred_action="error")
+        payload = {
+            "metadata": {"started_at_utc": "test", "split": "development", "generation_model": "test",
+                         "category_classification_version": 1},
+            "results": [result.model_dump()],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "errors"
+            write_reports(output, load_dataset(), [sample], payload)
+            self.assertIn("| category_accuracy | 0/1 (0.0%) |", output.with_suffix(".md").read_text())
+        self.assertEqual(payload["metrics"]["category_accuracy"]["rate"], 0)
+
+    def test_old_reports_do_not_invent_categories_from_saved_destinations(self) -> None:
+        sample = case(action="escalate", expected_contact_form="problemas_anuncios")
+        result = CaseResult(
+            case_id=sample.id, inferred_action="escalate",
+            validation={"is_valid_question": True, "suggested_response": "", "standalone_question": "Pergunta"},
+            structured_answer=faq_answer(action="escalate", relevant_contact_form="problemas_anuncios"),
+        )
+        self.assertIsNone(result.validation.category)
+        self.assertIsNone(summarize([sample], [result])["category_accuracy"])
+
     def test_historical_validation_flags_remain_readable_without_rescoring(self) -> None:
         dataset = load_dataset()
         sample = case("case-11", "clarify")
@@ -171,7 +227,7 @@ class EvaluationTest(unittest.TestCase):
             missing_knowledge=["Cannot investigate server logs."],
         )
         result = run_case(sample, Mock(), answer_fn=Mock(return_value=(answer.suggested_response, answer,
-                          QuestionValidation(is_valid_question=True, suggested_response="", standalone_question=sample.question))))
+                          QuestionValidation(is_valid_question=True, category="problemas_tecnicos", suggested_response="", standalone_question=sample.question))))
         payload = {
             "metadata": {"started_at_utc": "new-run", "split": "development",
                          "generation_model": "test-model", "triage_decision_version": 2},
@@ -188,7 +244,7 @@ class EvaluationTest(unittest.TestCase):
         self.assertIn("Missing knowledge or capabilities", markdown)
 
     def test_explicit_action_is_independent_of_confidence_and_knowledge_gaps(self) -> None:
-        valid = QuestionValidation(is_valid_question=True, suggested_response="", standalone_question="Example request")
+        valid = QuestionValidation(is_valid_question=True, category="problemas_anuncios", suggested_response="", standalone_question="Example request")
         for confidence in ("low", "medium", "high"):
             answer = faq_answer(
                 action="escalate", confidence_score=confidence,
@@ -202,15 +258,16 @@ class EvaluationTest(unittest.TestCase):
         self.assertEqual(infer_action(valid, None), "unresolved")
         clarification = QuestionValidation(
             is_valid_question=True, needs_clarification=True,
+            category="indeterminado",
             suggested_response="A que opção se refere?",
         )
-        rejection = QuestionValidation(is_valid_question=False, suggested_response="Só respondo sobre o website.")
+        rejection = QuestionValidation(is_valid_question=False, category="fora_ambito", suggested_response="Só respondo sobre o website.")
         self.assertEqual(infer_action(clarification, None), "clarify")
         self.assertEqual(infer_action(rejection, None), "reject")
 
     def test_run_case_does_not_send_gold_labels_to_the_chatbot(self) -> None:
         sample = case(history=[{"role": "user", "content": "Earlier request"}])
-        validation = QuestionValidation(is_valid_question=True, suggested_response="", standalone_question=sample.question)
+        validation = QuestionValidation(is_valid_question=True, category="problemas_anuncios", suggested_response="", standalone_question=sample.question)
         answer_fn = Mock(return_value=("Example response", faq_answer(), validation))
         client = Mock()
         result = run_case(sample, client, answer_fn=answer_fn)
@@ -218,6 +275,7 @@ class EvaluationTest(unittest.TestCase):
             sample.question, [{"role": "user", "content": "Earlier request"}], client=client
         )
         self.assertEqual(result.inferred_action, "answer")
+        self.assertEqual(result.validation.category, "problemas_anuncios")
 
     def test_errors_are_preserved_and_cannot_expose_exception_text(self) -> None:
         result = run_case(case(), Mock(), answer_fn=Mock(side_effect=RuntimeError("secret-test-value")))

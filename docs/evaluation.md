@@ -27,7 +27,7 @@ those cases are no longer an independent final check; add a fresh holdout.
 
 Each case contains:
 
-- `category`: an expected category for future classification evaluation.
+- `category`: the expected request category, scored against the validation-stage prediction.
 - `expected_action`: answer, clarify, escalate or reject.
 - `expected_contact_form`: the exact destination for required escalations.
 - `expected_source_groups`: for each group, citing any one listed FAQ satisfies
@@ -261,8 +261,40 @@ Use a fresh output name for a new live run, for example:
 Review the response text as well as the decision. The decision/schema tests and
 mocked SDK tests establish application behavior, not live model accuracy; a fresh
 paid development run is still needed to measure the prompt changes. Labels and
-the holdout split are unchanged. Category accuracy remains **N/A**, because free-text
-`topics` and referral destinations are not a dedicated category prediction.
+the holdout split are unchanged.
+
+### Category classification
+
+The existing validation call now also returns a required `category`. This is the
+single category prediction for the turn, including early clarification and
+rejection; it is not inferred from FAQ `topics`, the selected action or a contact
+destination. Classification sees the current request and conversation context,
+not the evaluation labels. It does not filter retrieval or force escalation.
+Urgency and extraction of supplied details are outside this increment.
+
+Allowed categories are the ten official contact-topic keys plus:
+
+- `indeterminado`: the topic cannot yet be identified, even with history.
+- `fora_ambito`: rejected requests, including prohibited requests.
+
+`outros` means a known in-scope topic with no more specific category, not a missing
+prediction. A vague payment problem can be `pagamentos_servicos` and still need
+clarification. Follow-ups inherit the resolved topic, while an explicit topic
+change takes precedence. Category and support destination are separate decisions.
+
+Fresh runs include `category_classification_version=1` and
+`validation_contract_version=5`. `category_accuracy` uses exact label matches over
+all completed cases; errors or missing predictions get no credit. Each case shows
+its expected and predicted categories. Historical results without predictions
+remain **N/A**, even when a contact destination was recorded; regeneration does
+not reclassify old requests. The published run-07 baseline remains unchanged.
+No dataset labels or approval metadata were changed for this increment.
+
+To measure classification and check for action/routing regressions:
+
+```bash
+.venv/bin/python evaluate.py --split development --output reports/development-category-01
+```
 
 Errors count against action accuracy and any required escalation. Metrics with
 no applicable examples are **N/A**, not 0% or 100%. Citation metrics only check

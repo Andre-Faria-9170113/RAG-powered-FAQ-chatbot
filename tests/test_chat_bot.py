@@ -2,6 +2,7 @@ import os
 import unittest
 from copy import deepcopy
 from types import SimpleNamespace
+from typing import get_args
 from unittest.mock import Mock, patch
 
 from pydantic import ValidationError
@@ -10,6 +11,7 @@ from chat_bot import (
     AnswerSource,
     FAQResponse,
     QuestionValidation,
+    RequestCategory,
     answer_user_question,
     append_contact_link,
     compact_history_if_needed,
@@ -21,6 +23,32 @@ from chat_bot import (
 
 
 class TriageContractTest(unittest.TestCase):
+    def test_categories_match_contact_topics_plus_unknown_and_rejected(self) -> None:
+        from contact_forms import ContactFormKey
+
+        self.assertEqual(
+            set(get_args(RequestCategory)),
+            (set(get_args(ContactFormKey)) - {"none"}) | {"indeterminado", "fora_ambito"},
+        )
+
+    def test_category_is_required_and_rejections_have_a_distinct_category(self) -> None:
+        base = {"is_valid_question": True, "suggested_response": "", "standalone_question": "Pergunta"}
+        for update in ({}, {"category": "none"}, {"category": "invented"}, {"category": "fora_ambito"}):
+            with self.subTest(update=update), self.assertRaises(ValidationError):
+                QuestionValidation.model_validate(base | update)
+        with self.assertRaises(ValidationError):
+            QuestionValidation(is_valid_question=False, category="outros", suggested_response="Recusa")
+        rejection = QuestionValidation(is_valid_question=False, category="fora_ambito", suggested_response="Recusa")
+        self.assertEqual(rejection.category, "fora_ambito")
+
+    def test_known_category_does_not_prevent_clarification(self) -> None:
+        validation = QuestionValidation(
+            is_valid_question=True, needs_clarification=True, category="pagamentos_servicos",
+            suggested_response="O que aconteceu com o pagamento?",
+        )
+        self.assertTrue(validation.needs_clarification)
+        self.assertEqual(validation.category, "pagamentos_servicos")
+
     def test_validation_rejects_contradictory_flags_and_empty_early_replies(self) -> None:
         invalid = [
             {"is_valid_question": False, "needs_clarification": True, "suggested_response": "A que opção se refere?"},
@@ -33,7 +61,7 @@ class TriageContractTest(unittest.TestCase):
         ]
         for payload in invalid:
             with self.subTest(payload=payload), self.assertRaises(ValidationError):
-                QuestionValidation.model_validate(payload)
+                QuestionValidation.model_validate(payload | {"category": "indeterminado" if payload["is_valid_question"] else "fora_ambito"})
 
     def test_action_is_required_and_inconsistent_triage_is_rejected(self) -> None:
         base = {
@@ -100,7 +128,7 @@ class ConversationTest(unittest.TestCase):
         client = Mock()
         client.responses.parse.side_effect = [
             SimpleNamespace(output_parsed=QuestionValidation(
-                is_valid_question=True, suggested_response="", standalone_question=rewritten,
+                is_valid_question=True, category="contactos_anuncios", suggested_response="", standalone_question=rewritten,
             )),
             SimpleNamespace(output_parsed=answer),
         ]
@@ -178,6 +206,7 @@ class ConversationTest(unittest.TestCase):
             SimpleNamespace(
                 output_parsed=QuestionValidation(
                     is_valid_question=True,
+                    category="contactos_anuncios",
                     suggested_response="",
                     standalone_question=first_question,
                 )
@@ -186,6 +215,7 @@ class ConversationTest(unittest.TestCase):
             SimpleNamespace(
                 output_parsed=QuestionValidation(
                     is_valid_question=True,
+                    category="contactos_anuncios",
                     suggested_response="",
                     standalone_question=resolved,
                 )
@@ -213,7 +243,7 @@ class ConversationTest(unittest.TestCase):
                     },
                 ]
             )
-            _, answer, _ = answer_user_question(follow_up, history, client)
+            _, answer, validation = answer_user_question(follow_up, history, client)
 
         self.assertEqual(embed.call_args.args[1], [resolved])
         self.assertEqual(lexical.call_args.args[1], resolved)
@@ -222,6 +252,7 @@ class ConversationTest(unittest.TestCase):
         self.assertEqual(validation_input[-1]["content"], follow_up)
         self.assertNotIn("details", validation_input[1])
         self.assertEqual(answer, second_answer)
+        self.assertEqual(validation.category, "contactos_anuncios")
 
     @patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"})
     def test_rejected_or_ambiguous_turn_does_not_retrieve(self) -> None:
@@ -231,6 +262,7 @@ class ConversationTest(unittest.TestCase):
                 client.responses.parse.return_value = SimpleNamespace(
                     output_parsed=QuestionValidation(
                         is_valid_question=valid,
+                        category="indeterminado" if valid else "fora_ambito",
                         needs_clarification=clarify,
                         suggested_response="Qual é o tópico?",
                         standalone_question="Unused question that must not trigger retrieval",
@@ -249,6 +281,7 @@ class ConversationTest(unittest.TestCase):
     def test_validation_prompt_separates_unresolved_references_from_rejection(self) -> None:
         clarification = QuestionValidation(
             is_valid_question=True, needs_clarification=True,
+            category="indeterminado",
             suggested_response="A que opção se refere?",
         )
         client = Mock()
@@ -263,6 +296,9 @@ class ConversationTest(unittest.TestCase):
         self.assertIn("Se faltarem a intenção ou os sintomas", instructions)
         self.assertIn("transformes um problema vago numa intenção concreta", instructions)
         self.assertIn("não basta para presumir a operação", instructions)
+        self.assertIn("A categoria não altera as regras", instructions)
+        self.assertIn("um novo tópico explícito prevalece", instructions)
+        self.assertIn("não uses indeterminado só por faltar esse detalhe", instructions)
 
     def test_api_failures_and_missing_parsed_responses_are_not_repaired(self) -> None:
         for failure in (RuntimeError("API failure"), SimpleNamespace(output_parsed=None)):
@@ -292,6 +328,7 @@ class ConversationTest(unittest.TestCase):
         client.responses.parse.return_value = SimpleNamespace(
             output_parsed=QuestionValidation(
                 is_valid_question=True,
+                category="contactos_anuncios",
                 standalone_question="What is new in the chat?",
                 suggested_response="",
             )
