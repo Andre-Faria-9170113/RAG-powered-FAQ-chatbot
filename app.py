@@ -29,10 +29,12 @@ def initialise_session_state() -> None:
         "messages",
         [{"role": "assistant", "content": WELCOME_MESSAGE}],
     )
+    st.session_state.setdefault("pending_prompt", None)
 
 
 def reset_conversation() -> None:
     st.session_state.messages = [{"role": "assistant", "content": WELCOME_MESSAGE}]
+    st.session_state.pending_prompt = None
 
 
 @st.cache_resource(show_spinner=False)
@@ -77,7 +79,7 @@ def has_user_turn() -> bool:
 
 
 def suggestion_prompt() -> str | None:
-    if has_user_turn():
+    if has_user_turn() or st.session_state.get("pending_prompt"):
         return None
     selected = st.pills(
         "Experimente perguntar",
@@ -87,7 +89,10 @@ def suggestion_prompt() -> str | None:
         width="stretch",
         wrap=True,
     )
-    return SUGGESTIONS[selected] if selected else None
+    if selected:
+        st.session_state.pending_prompt = SUGGESTIONS[selected]
+        st.rerun()
+    return None
 
 
 def answer_prompt(prompt: str) -> None:
@@ -95,21 +100,19 @@ def answer_prompt(prompt: str) -> None:
     render_message({"role": "user", "content": prompt})
 
     with st.chat_message("assistant"):
-        with st.status(":shimmer[A validar e consultar as FAQs]", type="compact") as status:
+        with st.spinner("A validar o pedido e a consultar as FAQs..."):
             try:
                 answer, structured_answer, _validation = answer_user_question(
                     prompt,
                     st.session_state.messages[:-1],
                     client=cached_client(),
                 )
-                status.update(label="FAQs consultadas", state="complete")
             except Exception as exc:
                 answer = (
                     "Não consegui processar o pedido neste momento. "
                     f"Detalhe técnico: `{exc}`"
                 )
                 structured_answer = None
-                status.update(label="Não foi possível concluir", state="error")
 
         if structured_answer is None and "Detalhe técnico:" in answer:
             st.error(answer)
@@ -161,10 +164,13 @@ def main() -> None:
     for message in st.session_state.messages:
         render_message(message)
 
-    prompt = suggestion_prompt()
-    prompt = prompt or st.chat_input("Escreva a sua pergunta", submit_mode="disable")
+    pending_prompt = st.session_state.get("pending_prompt")
+    st.session_state.pending_prompt = None
+    chat_prompt = st.chat_input("Escreva a sua pergunta", submit_mode="disable")
+    prompt = pending_prompt or chat_prompt
 
     if not prompt:
+        suggestion_prompt()
         return
 
     answer_prompt(prompt)
