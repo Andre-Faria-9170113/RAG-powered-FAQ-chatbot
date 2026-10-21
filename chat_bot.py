@@ -20,6 +20,7 @@ from openai import OpenAI
 from pydantic import BaseModel, Field
 
 import contact_forms
+from api_metrics import api_call, api_stage
 from contact_forms import (
     CONTACT_FORMS,
     CONTACT_LABELS,
@@ -182,7 +183,7 @@ def faq_version(records: list[FAQRecord]) -> str:
 def create_embeddings(client: OpenAI, texts: list[str]) -> list[list[float]]:
     if not texts:
         return []
-    response = client.embeddings.create(model=EMBEDDING_MODEL, input=texts)
+    response = api_call("embedding", client.embeddings.create, model=EMBEDDING_MODEL, input=texts)
     return [item.embedding for item in response.data]
 
 
@@ -213,7 +214,8 @@ def ensure_vector_store(
     if stored_version == version and collection.count() == len(faq_records):
         return collection
 
-    embeddings = create_embeddings(client, [record.text for record in faq_records])
+    with api_stage("corpus_embedding"):
+        embeddings = create_embeddings(client, [record.text for record in faq_records])
     existing_ids = collection.get()["ids"]
     if existing_ids:
         collection.delete(ids=existing_ids)
@@ -254,7 +256,8 @@ def validate_question(
     question: str,
     history: Sequence[Mapping[str, Any]] = (),
 ) -> QuestionValidation:
-    response = client.responses.parse(
+    response = api_call(
+        "validation", client.responses.parse,
         model=GENERATION_MODEL,
         instructions=(
             "Validas mensagens para um chatbot de apoio ao cliente de um website "
@@ -300,7 +303,8 @@ def retrieve_faqs(
     question: str,
     records: list[FAQRecord],
 ) -> list[RetrievedFAQ]:
-    query_embedding = create_embeddings(client, [question])[0]
+    with api_stage("query_embedding"):
+        query_embedding = create_embeddings(client, [question])[0]
     response = collection.query(
         query_embeddings=[query_embedding],
         n_results=TOP_K,
@@ -394,7 +398,8 @@ def generate_faq_answer(
     results: list[RetrievedFAQ],
     history: list[dict[str, str]],
 ) -> FAQResponse:
-    response = client.responses.parse(
+    response = api_call(
+        "answer_generation", client.responses.parse,
         model=GENERATION_MODEL,
         instructions=(
             "És um assistente de apoio ao cliente para um website de classificados. "
@@ -484,7 +489,8 @@ def compact_history_if_needed(
     middle = messages[2:-2]
     latest = messages[-2:]
     transcript = "\n".join(f"{item['role']}: {item['content']}" for item in middle)
-    response = client.responses.create(
+    response = api_call(
+        "history_summary", client.responses.create,
         model=GENERATION_MODEL,
         instructions=(
             "Resume histórico de apoio ao cliente em português europeu. Mantém "

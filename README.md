@@ -111,6 +111,10 @@ Live evaluation makes paid API calls and generates JSON/Markdown reports using
 the current chatbot. Holdout is not run by default. Category accuracy is not yet
 measurable; inferred actions, contact routing and source selection are scored.
 Factual support and clarification quality have separate human-review fields.
+New reports also include per-case/stage token usage and latency, mean/p95 case
+latency, and estimated EUR cost using the dated model prices and ECB conversion in
+`data/evaluations/model_pricing.json`. Missing usage or unsupported pricing stays
+N/A; the historical baseline has no retroactively invented token/cost numbers.
 
 See [the evaluation guide](docs/evaluation.md) for metric definitions, label
 review, report regeneration and reproducibility details.

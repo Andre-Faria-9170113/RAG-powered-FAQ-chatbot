@@ -19,6 +19,8 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 import chat_bot as bot
 import contact_forms
+import api_metrics
+from api_metrics import APICallMetrics, PricingSnapshot, capture_api_metrics, load_pricing, summarize_calls
 
 ROOT = Path(__file__).resolve().parent
 DATASET_PATH = ROOT / "data" / "evaluations" / "triage_cases.json"
@@ -100,6 +102,7 @@ class CaseResult(StrictModel):
     validation: bot.QuestionValidation | None = None
     structured_answer: bot.FAQResponse | None = None
     latency_ms: float = 0
+    api_calls: list[APICallMetrics] | None = None
     error_type: str | None = None
     error_status: int | None = None
     review: HumanReview = Field(default_factory=HumanReview)
@@ -141,29 +144,33 @@ def run_case(
     case: EvaluationCase,
     client: OpenAI,
     answer_fn: Callable | None = None,
+    pricing: PricingSnapshot | None = None,
 ) -> CaseResult:
-    start = perf_counter()
-    try:
-        text, answer, validation = (answer_fn or bot.answer_user_question)(
-            case.question, [message.model_dump() for message in case.history], client=client
-        )
-        return CaseResult(
-            case_id=case.id,
-            inferred_action=infer_action(validation, answer),
-            answer=text,
-            validation=validation,
-            structured_answer=answer,
-            latency_ms=round((perf_counter() - start) * 1000, 1),
-        )
-    except Exception as error:
-        # API error messages can contain credentials; store only type and HTTP status.
-        return CaseResult(
-            case_id=case.id,
-            inferred_action="error",
-            error_type=type(error).__name__,
-            error_status=getattr(error, "status_code", None),
-            latency_ms=round((perf_counter() - start) * 1000, 1),
-        )
+    with capture_api_metrics(pricing if pricing is not None else load_pricing()) as calls:
+        start = perf_counter()
+        try:
+            text, answer, validation = (answer_fn or bot.answer_user_question)(
+                case.question, [message.model_dump() for message in case.history], client=client
+            )
+            return CaseResult(
+                case_id=case.id,
+                inferred_action=infer_action(validation, answer),
+                answer=text,
+                validation=validation,
+                structured_answer=answer,
+                latency_ms=round((perf_counter() - start) * 1000, 1),
+                api_calls=calls,
+            )
+        except Exception as error:
+            # API error messages can contain credentials; store only type and HTTP status.
+            return CaseResult(
+                case_id=case.id,
+                inferred_action="error",
+                error_type=type(error).__name__,
+                error_status=getattr(error, "status_code", None),
+                latency_ms=round((perf_counter() - start) * 1000, 1),
+                api_calls=calls,
+            )
 
 
 def ratio(passed: int, total: int) -> dict:
@@ -210,6 +217,14 @@ def summarize(cases: list[EvaluationCase], results: list[CaseResult]) -> dict:
         if action == "clarify" and result.review.follow_up_relevant is not None:
             judged_followups.append(result.review.follow_up_relevant)
     latency = sorted(result.latency_ms for result in results)
+    instrumented = [result for result in results if result.api_calls is not None]
+    calls = [call for result in instrumented for call in result.api_calls]
+    usage = summarize_calls(calls, captured=bool(results) and len(instrumented) == len(results))
+    usage["instrumented_cases"] = len(instrumented)
+    usage["by_stage"] = {
+        stage: summarize_calls([call for call in calls if call.stage == stage])
+        for stage in sorted({call.stage for call in calls})
+    }
     return {
         "cases_completed": len(results),
         "errors": sum(result.inferred_action == "error" for result in results),
@@ -225,6 +240,7 @@ def summarize(cases: list[EvaluationCase], results: list[CaseResult]) -> dict:
         "confusion": {action: dict(counts) for action, counts in confusion.items()},
         "mean_latency_ms": sum(latency) / len(latency) if latency else None,
         "p95_latency_ms": latency[math.ceil(len(latency) * 0.95) - 1] if latency else None,
+        "usage": usage,
     }
 
 
@@ -232,6 +248,12 @@ def format_metric(metric: dict) -> str:
     if metric["rate"] is None:
         return "N/A (0 applicable or reviewed cases)"
     return f"{metric['passed']}/{metric['total']} ({metric['rate']:.1%})"
+
+
+def format_value(value, decimals: int | None = None) -> str:
+    if value is None:
+        return "N/A"
+    return f"{value:.{decimals}f}" if decimals is not None else str(value)
 
 
 def render_report(dataset: EvaluationDataset, cases: list[EvaluationCase], payload: dict) -> str:
@@ -257,7 +279,41 @@ def render_report(dataset: EvaluationDataset, cases: list[EvaluationCase], paylo
         "", "Lower is better for answers_when_non_answer_expected; higher is better for the other automatic checks.",
         "Runtime errors count as action failures and missed required escalations; expected evidence gets zero credit.",
         "Citation ID validity and expected-source coverage do not establish factual support.",
-        "Latency includes validation, retrieval, generation and any first-use indexing; no token/cost measurement is claimed.",
+        "", "## Latency, tokens and estimated cost", "",
+        f"Mean / p95 case latency: {format_value(metrics['mean_latency_ms'], 1)} / {format_value(metrics['p95_latency_ms'], 1)} ms.",
+        "Case latency includes validation, retrieval, generation and any first-use indexing, but excludes report writing and app startup scraping.",
+    ])
+    usage = metrics["usage"]
+    lines.extend([
+        f"Instrumented cases: {usage['instrumented_cases']}/{len(results)}; observed API calls: {usage['api_calls']}.",
+        f"Calls with complete usage: {usage['calls_with_complete_usage']}/{usage['api_calls']}; priced calls: {usage['calls_with_estimated_cost']}/{usage['api_calls']}; EUR estimates: {usage['calls_with_estimated_cost_eur']}/{usage['api_calls']}.",
+        f"Input tokens (including cached): {format_value(usage['input_tokens'])}; cached input: {format_value(usage['cached_input_tokens'])}; output: {format_value(usage['output_tokens'])}.",
+        f"Cache-write tokens, where reported: {format_value(usage['cache_write_tokens'])}.",
+        f"Total tokens: {format_value(usage['total_tokens'])}; recorded token subtotal: {format_value(usage['recorded_total_tokens_subtotal'])}.",
+        f"Estimated total: EUR {format_value(usage['estimated_cost_eur'], 8)}; known-cost subtotal: EUR {format_value(usage['known_cost_eur_subtotal'], 8)}.",
+        "Missing usage/pricing stays N/A, not zero; subtotals are not a complete run total when coverage is incomplete.",
+        "Costs are public standard-rate estimates, not invoices; cached input is discounted and reasoning tokens are already included in output. Nonzero cache writes need separate rates and remain unpriced.",
+        "First-use corpus embeddings are charged to their triggering case and shown separately below. Fixed history fixtures do not invoke history compaction.",
+    ])
+    if snapshot := payload["metadata"].get("pricing_snapshot"):
+        lines.append(f"Pricing snapshot verified on: `{snapshot['verified_on']}`. Saved rates are retained when regenerating this report.")
+        if rate := snapshot.get("eur_exchange_rate"):
+            lines.append(
+                f"EUR conversion: 1 EUR = {rate['usd_per_eur']} USD, reference date `{rate['as_of']}` "
+                f"([source]({rate['source_url']})). Underlying USD estimates are retained in JSON."
+            )
+    if usage["by_stage"]:
+        lines.extend([
+            "", "| Stage | Calls | API latency sum (ms) | Total tokens | Estimated EUR | Known-cost subtotal EUR |",
+            "|---|---:|---:|---:|---:|---:|",
+        ])
+        for stage, values in usage["by_stage"].items():
+            lines.append(
+                f"| {stage} | {values['api_calls']} | {format_value(values['api_latency_ms'], 1)} | "
+                f"{format_value(values['total_tokens'])} | {format_value(values['estimated_cost_eur'], 8)} | "
+                f"{format_value(values['known_cost_eur_subtotal'], 8)} |"
+            )
+    lines.extend([
         "", "## Human review", "",
         f"Unsupported claims: {format_metric(metrics['unsupported_claim_rate_human'])} (lower is better).",
         f"Relevant follow-up: {format_metric(metrics['follow_up_relevance_human'])} (higher is better).",
@@ -280,7 +336,25 @@ def render_report(dataset: EvaluationDataset, cases: list[EvaluationCase], paylo
             f"Category label: `{case.category}`; critical: `{case.critical}`.",
             f"Expected action: `{case.expected_action}`; inferred: `{result.inferred_action}`.",
             f"Expected contact: `{case.expected_contact_form or 'none'}`.",
+            f"Elapsed case latency: {result.latency_ms:.1f} ms.",
         ])
+        if result.api_calls is None:
+            lines.append("Token/cost tracking: N/A (not recorded in this historical result).")
+        else:
+            consumption = summarize_calls(result.api_calls)
+            lines.append(f"Estimated case cost: EUR {format_value(consumption['estimated_cost_eur'], 8)}.")
+            if result.api_calls:
+                lines.extend([
+                    "", "| API stage | Model | Latency (ms) | Input | Cached input | Cache writes | Output | Estimated EUR | Status |",
+                    "|---|---|---:|---:|---:|---:|---:|---:|---|",
+                ])
+                for call in result.api_calls:
+                    lines.append(
+                        f"| {call.stage} | {call.response_model or call.requested_model} | {call.latency_ms:.1f} | "
+                        f"{format_value(call.input_tokens)} | {format_value(call.cached_input_tokens)} | {format_value(call.cache_write_tokens)} | "
+                        f"{format_value(call.output_tokens)} | {format_value(call.estimated_cost_eur, 8)} | "
+                        f"{call.error_type or 'response received'} |"
+                    )
         if case.history:
             lines.append("\nProvided context:")
             lines.extend(f"- {message.role}: {message.content}" for message in case.history)
@@ -309,7 +383,10 @@ def file_hash(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def run_metadata(dataset: EvaluationDataset, dataset_path: Path, split: str) -> dict:
+def run_metadata(
+    dataset: EvaluationDataset, dataset_path: Path, split: str,
+    pricing: PricingSnapshot | None = None,
+) -> dict:
     try:
         revision = subprocess.run(
             ["git", "rev-parse", "HEAD"], cwd=ROOT, check=True, capture_output=True, text=True
@@ -330,6 +407,10 @@ def run_metadata(dataset: EvaluationDataset, dataset_path: Path, split: str) -> 
         "implementation_sha256": file_hash(Path(bot.__file__)),
         "contact_router_sha256": file_hash(Path(contact_forms.__file__)),
         "evaluator_sha256": file_hash(Path(__file__)),
+        "telemetry_sha256": file_hash(Path(api_metrics.__file__)),
+        "pricing_snapshot": (pricing if pricing is not None else load_pricing()).model_dump(mode="json"),
+        "reporting_currency": "EUR",
+        "usage_tracking_version": 2,
         "git_revision": revision,
         "label_status": dataset.label_status,
         "timeout_seconds": 30,
@@ -357,6 +438,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, help="Output filename stem for JSON and Markdown.")
     parser.add_argument("--report-from", type=Path, help="Regenerate reports from saved/reviewed JSON without API calls.")
     parser.add_argument("--overwrite", action="store_true")
+    parser.add_argument("--pricing", type=Path, default=api_metrics.PRICING_PATH, help="Versioned token rates and EUR conversion; no live pricing/FX lookup.")
     args = parser.parse_args()
     dataset = load_dataset(args.cases)
     cases = [case for case in dataset.cases if case.split == args.split]
@@ -382,10 +464,11 @@ def main() -> None:
         return
     if not os.getenv("OPENAI_API_KEY"):
         parser.error("Set OPENAI_API_KEY in .env before running a live evaluation.")
+    pricing = load_pricing(args.pricing)
     client = OpenAI(timeout=30, max_retries=0)
-    payload = {"metadata": run_metadata(dataset, args.cases, args.split), "results": []}
+    payload = {"metadata": run_metadata(dataset, args.cases, args.split, pricing), "results": []}
     for index, case in enumerate(cases, start=1):
-        result = run_case(case, client)
+        result = run_case(case, client, pricing=pricing)
         payload["results"].append(result.model_dump())
         write_reports(output, dataset, cases, payload)
         print(f"[{index}/{len(cases)}] {case.id}: expected={case.expected_action} inferred={result.inferred_action}", flush=True)

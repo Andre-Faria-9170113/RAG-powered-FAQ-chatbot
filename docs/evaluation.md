@@ -73,6 +73,10 @@ Run development evaluation using the configured `.env` models and API key:
 .venv/bin/python evaluate.py --split development --output reports/development-run-01
 ```
 
+This creates `reports/development-run-01.json` and `.md`, automatically including
+the current token, EUR-cost and latency metrics; no metrics flag is needed.
+Choose a new output name for each fresh run to preserve previous results.
+
 This makes paid API calls through the same `answer_user_question` entry point as
 the app. Only each case's question and supplied history are passed to the
 chatbot; expected labels and rubrics are not included in model inputs. Supplied
@@ -90,13 +94,89 @@ result, not an execution error; there is no invented pass threshold.
 The runner uses the app's existing Chroma index and freshness checks. First-use
 indexing may make the first case slower. Requests run sequentially with a
 30-second SDK timeout and SDK retries disabled. Timings are elapsed pipeline
-latency, not a latency SLA. Token counts and monetary cost are not measured.
+latency, not a latency SLA. New runs also capture provider-reported token usage,
+per-call latency and estimated token costs reported in EUR; see below.
 
 Published baseline artifacts live under `docs/evaluations/`; exploratory output
 under `reports/` is ignored by git. Raw results include model names, retrieval
 settings, UTC run time, Git revision, corpus/contact catalog hashes, and dataset/
-implementation/contact-router/evaluator hashes. Code hashes identify uncommitted changes too;
+implementation/contact-router/evaluator/telemetry hashes and the full pricing
+snapshot used for the run. Code hashes identify uncommitted changes too;
 the Git revision alone does not imply a clean worktree.
+
+## Latency, tokens and cost
+
+Every new case result contains `api_calls` with the requested/reported model,
+stage, elapsed SDK-call latency, safe error type, provider-reported input, cached
+input, cache-write (when reported), output, reasoning (when reported), and total
+tokens. Prompts, keys and raw API error messages are not stored in these records.
+The normal app has no active metrics collector; its API behavior is unchanged.
+
+Stages distinguish `validation`, `corpus_embedding`, `query_embedding`, and
+`answer_generation`. History summarization is instrumented too, but this runner's
+fixed history fixtures do not invoke it, so it is not part of these case costs.
+A cold/rebuilt Chroma index charges its corpus embedding call to the first case
+that triggers it. A warm index makes no corpus embedding call. Compare this stage
+separately when comparing runs rather than attributing all of that cost to a
+normal support answer.
+
+JSON and Markdown reports include per-case pipeline latency, mean/p95 pipeline
+latency, per-call latency, stage latency sums, token totals, estimated total EUR
+and known-cost subtotals. Pipeline latency includes local retrieval/index work
+and API work, but not app-startup website scraping or writing evaluation reports.
+API-call latency includes SDK processing; this is not server-only latency or
+time-to-first-token. SDK retries remain disabled for evaluation.
+
+`data/evaluations/model_pricing.json` pins public **standard** USD prices per
+million tokens, the verification date, supported exact model names/aliases and
+source URLs. The initial snapshot covers the configured defaults:
+[GPT-4.1 mini](https://developers.openai.com/api/docs/models/gpt-4.1-mini) and
+[text-embedding-3-small](https://developers.openai.com/api/docs/models/text-embedding-3-small).
+No live pricing request is made during evaluation. Use `--pricing path/to/rates.json`
+for a reviewed alternative snapshot when changing models or rates. The full
+validated snapshot is copied into run metadata, and report regeneration retains
+the saved per-call estimates rather than repricing historical calls.
+
+The same file pins `reporting_currency="EUR"` and an `eur_exchange_rate` object
+with `usd_per_eur`, the reference date and source URL. The initial conversion
+uses the [ECB reference rate](https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/eurofxref-graph-usd.en.html)
+for 2026-10-20: 1 EUR = 1.1215 USD. This is a dated reporting assumption, not a
+live exchange rate or a bank's settlement rate. Update this block deliberately
+when preparing a later pricing snapshot; evaluation makes no live FX request.
+Per-call, case, stage and run costs are displayed in EUR, with
+`estimated_cost_eur` and `known_cost_eur_subtotal` in JSON metrics. The underlying
+USD estimates remain in JSON for auditing OpenAI's published USD token prices.
+
+For supported text calls without separate cache-write charges:
+
+```text
+estimated USD = ((input - cached input) * input rate
+                 + cached input * cached-input rate
+                 + output * output rate) / 1,000,000
+estimated EUR = estimated USD / usd_per_eur
+```
+
+Cached tokens are a subset of input, not additional input. Reasoning tokens are
+already part of output and are not charged twice. Embeddings use their reported
+prompt-token count and input rate. Calls with nonzero cache writes are recorded
+but left unpriced because this pricing schema does not supply write rates.
+This distinction follows [OpenAI's caching documentation](https://developers.openai.com/api/docs/guides/prompt-caching).
+
+These are estimates, **not invoices**: taxes, credits, account-specific discounts,
+regional/provider surcharges and nonstandard service tiers are not modeled.
+Bank conversion spreads and fees are not included. If the saved EUR rate is
+missing, euro estimates remain N/A even when a USD estimate is available. Reports
+without recorded EUR costs are not silently converted using today's rate.
+Unknown model prices, nonstandard tiers, missing/inconsistent usage, and calls
+that raise before exposing usage produce `null`/N/A, never invented free calls.
+Completed calls remain recorded if a later step fails. Aggregate full totals
+remain N/A when coverage is incomplete; explicitly labelled known subtotals and
+coverage counts show what was actually recorded. No tokenizer-based guesses are
+used to fill missing provider usage.
+
+Historical results without `api_calls` retain their latency measurements but
+show token/cost tracking as unavailable. The initial published baseline is not
+rewritten, and its usage cannot be reconstructed from its answer text.
 
 ## What the automatic metrics mean
 

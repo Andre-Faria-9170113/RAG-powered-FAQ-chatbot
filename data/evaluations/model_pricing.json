@@ -1,0 +1,31 @@
+{
+  "currency": "USD",
+  "reporting_currency": "EUR",
+  "eur_exchange_rate": {
+    "usd_per_eur": 1.1215,
+    "as_of": "2026-10-20",
+    "source_url": "https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/eurofxref-graph-usd.en.html"
+  },
+  "service_tier": "standard",
+  "verified_on": "2026-10-21",
+  "sources": [
+    "https://developers.openai.com/api/docs/models/gpt-4.1-mini",
+    "https://developers.openai.com/api/docs/models/text-embedding-3-small"
+  ],
+  "models": {
+    "gpt-4.1-mini": {
+      "kind": "responses",
+      "aliases": ["gpt-4.1-mini-2025-04-14"],
+      "input_usd_per_million": 0.4,
+      "cached_input_usd_per_million": 0.1,
+      "output_usd_per_million": 1.6
+    },
+    "text-embedding-3-small": {
+      "kind": "embeddings",
+      "aliases": [],
+      "input_usd_per_million": 0.02,
+      "cached_input_usd_per_million": 0,
+      "output_usd_per_million": 0
+    }
+  }
+}

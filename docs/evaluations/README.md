@@ -11,6 +11,11 @@ they are not scores for today's prompts or expanded dataset. A fresh development
 run is needed after review of the current labels. The current holdout has 12
 cases and remains unrun.
 
+New evaluation runs record per-call token usage and estimated EUR costs (with
+underlying USD estimates retained in JSON). This
+historical run did not capture usage: its latency remains valid, but token/cost
+figures cannot be backfilled from the saved responses.
+
 Labels remain assistant-authored drafts for review by the project owner. The
 following are descriptive measurements for this one run, not a course grade or
 an estimate of production accuracy. No chatbot prompts or behavior were changed

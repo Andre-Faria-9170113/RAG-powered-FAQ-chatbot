@@ -77,7 +77,7 @@ print("Fresh bootstrap verified")
 '''
         with tempfile.TemporaryDirectory() as directory:
             for name in (
-                "app.py", "chat_bot.py", "contact_forms.py", "refresh_website_data.py",
+                "app.py", "chat_bot.py", "contact_forms.py", "refresh_website_data.py", "api_metrics.py",
                 "scrape_contact_forms.py", "scrape_faqs.py", "website_scraping.py",
             ):
                 shutil.copy2(root / name, Path(directory) / name)
