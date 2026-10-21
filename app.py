@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 import streamlit as st
 from openai import OpenAI
 
@@ -9,8 +11,11 @@ from chat_bot import (
     FAQResponse,
     answer_user_question,
     compact_history_if_needed,
+    conversation_history,
     load_faq_records,
 )
+
+LOGGER = logging.getLogger(__name__)
 
 PROJECT_TITLE = "Assistente CustoJusto"
 WELCOME_MESSAGE = (
@@ -30,11 +35,17 @@ def initialise_session_state() -> None:
         [{"role": "assistant", "content": WELCOME_MESSAGE}],
     )
     st.session_state.setdefault("pending_prompt", None)
+    if "context_history" not in st.session_state:
+        st.session_state.context_history = conversation_history(
+            st.session_state.messages
+        )
 
 
 def reset_conversation() -> None:
     st.session_state.messages = [{"role": "assistant", "content": WELCOME_MESSAGE}]
     st.session_state.pending_prompt = None
+    st.session_state.context_history = []
+    st.session_state.suggestion = None
 
 
 @st.cache_resource(show_spinner=False)
@@ -51,7 +62,10 @@ def render_message(message: dict) -> None:
     role = message["role"]
     content = message["content"]
     with st.chat_message(role):
-        st.markdown(content)
+        if message.get("error"):
+            st.error(content)
+        else:
+            st.markdown(content)
         if details := message.get("details"):
             render_answer_details(FAQResponse.model_validate(details))
 
@@ -70,8 +84,7 @@ def render_answer_details(answer: FAQResponse | None) -> None:
             st.write("FAQs usadas:")
             for source in answer.sources:
                 st.write(f"- `{source.chunk_id}`: {source.question}")
-        if answer.relevant_contact_form != "none":
-            st.write(f"Encaminhamento: `{answer.relevant_contact_form}`")
+        st.write(f"Encaminhamento: `{answer.relevant_contact_form}`")
 
 
 def has_user_turn() -> bool:
@@ -98,40 +111,56 @@ def suggestion_prompt() -> str | None:
 def answer_prompt(prompt: str) -> None:
     st.session_state.messages.append({"role": "user", "content": prompt})
     render_message({"role": "user", "content": prompt})
+    failed = False
 
     with st.chat_message("assistant"):
         with st.spinner("A validar o pedido e a consultar as FAQs..."):
             try:
                 answer, structured_answer, _validation = answer_user_question(
                     prompt,
-                    st.session_state.messages[:-1],
+                    st.session_state.context_history,
                     client=cached_client(),
                 )
-            except Exception as exc:
+            except Exception:
+                LOGGER.exception("Could not answer the current turn")
                 answer = (
                     "Não consegui processar o pedido neste momento. "
-                    f"Detalhe técnico: `{exc}`"
+                    "Por favor, tente novamente."
                 )
                 structured_answer = None
+                failed = True
 
-        if structured_answer is None and "Detalhe técnico:" in answer:
+        if failed:
             st.error(answer)
         else:
             st.markdown(answer)
             render_answer_details(structured_answer)
 
     assistant_message = {"role": "assistant", "content": answer}
+    if failed:
+        assistant_message["error"] = True
     if structured_answer is not None:
         assistant_message["details"] = structured_answer.model_dump()
     st.session_state.messages.append(assistant_message)
 
+    if failed:
+        return
+
+    st.session_state.context_history.extend(
+        [
+            {"role": "user", "content": prompt},
+            {"role": "assistant", "content": answer},
+        ]
+    )
     try:
-        st.session_state.messages = compact_history_if_needed(
+        st.session_state.context_history = compact_history_if_needed(
             cached_client(),
-            st.session_state.messages,
+            st.session_state.context_history,
         )
     except Exception:
-        pass
+        LOGGER.exception(
+            "History compaction failed; retaining the complete model context"
+        )
 
 
 def main() -> None:
