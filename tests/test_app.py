@@ -11,6 +11,7 @@ import streamlit as st
 from streamlit.testing.v1 import AppTest
 
 from chat_bot import FAQRecord, FAQResponse, QuestionValidation
+from contact_forms import CONTACT_FORMS, CONTACT_LABELS
 
 APP_PATH = Path(__file__).resolve().parents[1] / "app.py"
 
@@ -96,6 +97,41 @@ print("Fresh bootstrap verified")
         self.assertEqual(len(app.chat_input), 1)
         self.assertEqual(len(app.pills), 1)
         self.refresh.assert_called_once()
+
+    def test_answer_details_link_each_official_contact_form(self) -> None:
+        app = AppTest.from_file(str(APP_PATH), default_timeout=10).run()
+        for destination, url in CONTACT_FORMS.items():
+            with self.subTest(destination=destination):
+                answer = FAQResponse(
+                    confidence_score="low", relevant_contact_form=destination,
+                    suggested_response="Contacte a equipa.",
+                )
+                app.session_state["messages"] = [
+                    {"role": "user", "content": "Preciso de apoio."},
+                    {"role": "assistant", "content": answer.suggested_response,
+                     "details": answer.model_dump()},
+                ]
+                app.run()
+                self.assertFalse(app.exception)
+                self.assertEqual(
+                    app.expander[0].markdown[-1].value,
+                    f"Encaminhamento: [{CONTACT_LABELS[destination]}]({url})",
+                )
+
+    def test_answer_details_show_nenhum_without_a_link_when_not_referred(self) -> None:
+        answer = FAQResponse(
+            confidence_score="high", relevant_contact_form="none",
+            suggested_response="Resposta da FAQ.",
+        )
+        app = AppTest.from_file(str(APP_PATH), default_timeout=10).run()
+        app.session_state["messages"] = [
+            {"role": "user", "content": "Tenho uma pergunta."},
+            {"role": "assistant", "content": answer.suggested_response,
+             "details": answer.model_dump()},
+        ]
+        app.run()
+        self.assertFalse(app.exception)
+        self.assertEqual(app.expander[0].markdown[-1].value, "Encaminhamento: Nenhum")
 
     def test_startup_check_is_shared_across_reruns_resets_and_sessions(self) -> None:
         app = AppTest.from_file(str(APP_PATH), default_timeout=10).run()

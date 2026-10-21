@@ -8,7 +8,7 @@ import httpx
 import streamlit as st
 from openai import OpenAI
 
-from contact_forms import reload_contact_forms
+from contact_forms import CONTACT_FORMS, CONTACT_LABELS, reload_contact_forms
 from refresh_website_data import refresh as refresh_website_data
 from chat_bot import (
     FAQResponse,
@@ -91,7 +91,13 @@ def render_answer_details(answer: FAQResponse | None) -> None:
             st.write("FAQs usadas:")
             for source in answer.sources:
                 st.write(f"- `{source.chunk_id}`: {source.question}")
-        st.write(f"Encaminhamento: `{answer.relevant_contact_form}`")
+        destination = answer.relevant_contact_form
+        if destination == "none":
+            st.markdown("Encaminhamento: Nenhum")
+        else:
+            st.markdown(
+                f"Encaminhamento: [{CONTACT_LABELS[destination]}]({CONTACT_FORMS[destination]})"
+            )
 
 
 def has_user_turn() -> bool:
