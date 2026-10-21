@@ -21,6 +21,12 @@ streamlit run app.py
   retrieval, structured answer generation, and history compaction.
 - `data/faqs.json` is treated as the website FAQ source. The Chroma index is
   rebuilt when the normalized FAQ content hash changes.
+- `data/contact_forms.json` pins the ten official contact categories and their
+  published subject options. `contact_forms.py` supplies routing context, URLs
+  and the structured response's allowed destinations from that catalog.
+
+See [contact routing](docs/contact-routing.md) for the source, refresh command
+and routing distinctions. The app reads this local snapshot, not the live site.
 
 Generated local vector data is stored in `.chroma/` and ignored by git.
 
@@ -59,8 +65,8 @@ differences from the brief and course references.
 
 ## Triage evaluation
 
-`data/evaluations/triage_cases.json` contains 30 draft-labelled Portuguese support
-cases: 20 development cases and 10 holdout cases. Labels need review by the
+`data/evaluations/triage_cases.json` contains 34 draft-labelled Portuguese support
+cases: 22 development cases and 12 holdout cases. Labels need review by the
 project owner before being treated as human-approved ground truth.
 
 ```bash
@@ -75,5 +81,6 @@ Factual support and clarification quality have separate human-review fields.
 
 See [the evaluation guide](docs/evaluation.md) for metric definitions, label
 review, report regeneration and reproducibility details.
-The [initial development baseline](docs/evaluations/README.md) includes results
-and failure examples; the holdout split remains unused.
+The [historical development baseline](docs/evaluations/README.md) includes results
+and failure examples for dataset v1.0, before the contact catalog update. It is
+not a score for the current dataset or prompts; the holdout split remains unused.

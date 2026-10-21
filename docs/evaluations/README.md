@@ -1,8 +1,15 @@
-# Initial development baseline
+# Historical development baseline (dataset v1.0)
 
 The [full report](baseline-development.md) and [raw results](baseline-development.json)
 record a live run of the 20 development cases on 2026-10-21 with the configured
 `gpt-4.1-mini` generation model. The 10 holdout cases have not been run.
+
+This run predates the ten-category contact catalog and dataset v1.1 (34 cases).
+The [original dataset](triage-cases-v1.json) is preserved byte-for-byte with the
+hash recorded in the results. The raw JSON and Markdown report are unchanged;
+they are not scores for today's prompts or expanded dataset. A fresh development
+run is needed after review of the current labels. The current holdout has 12
+cases and remains unrun.
 
 Labels remain assistant-authored drafts for review by the project owner. The
 following are descriptive measurements for this one run, not a course grade or

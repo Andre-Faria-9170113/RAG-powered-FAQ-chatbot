@@ -1,21 +1,23 @@
 # Triage evaluation
 
 This implements item 1 of the project improvement plan: a labeled dataset, a
-repeatable evaluation runner and an inspectable baseline. It does not change
-chatbot prompts, output schemas, retrieval or routing policy.
+repeatable evaluation runner and an inspectable baseline. The evaluator calls
+the production chatbot without injecting gold labels or changing its policy.
+The later [contact catalog update](contact-routing.md) expands runtime routing;
+the initial baseline predates that update and remains historical.
 
 ## Dataset and label ownership
 
-`data/evaluations/triage_cases.json` contains 30 synthetic Portuguese support
+`data/evaluations/triage_cases.json` (v1.1) contains 34 synthetic Portuguese support
 requests, authored against the local FAQ corpus. These are **assistant-authored
 draft labels**, not production conversations or independently human-reviewed
 ground truth. The project owner should review the expected actions, contact
 destinations and rubrics before treating the scores as authoritative.
 
-There are 20 development cases and 10 holdout cases. The cases include 14 expected
-answers, 5 clarifications, 7 escalations and 4 rejections. Four cases provide
+There are 22 development cases and 12 holdout cases. The cases include 14 expected
+answers, 5 clarifications, 11 escalations and 4 rejections. Four cases provide
 conversation context, including the new-chat regression, a topic change and a
-summary. All six contact destinations appear in escalation labels. IDs and
+summary. All ten contact destinations appear in escalation labels. IDs and
 payment/support references are synthetic; no real customer details are needed.
 
 The holdout split is not run by default. Tune using development cases, then use
@@ -32,13 +34,23 @@ Each case contains:
 - `rubric`: semantic requirements and prohibited assumptions for review.
 - Optional `history` and `critical` fields.
 
-The dataset stores the normalized FAQ content hash. If FAQs change, the runner
-stops until the labels and source IDs are reviewed against the new corpus. This
-avoids silently evaluating old labels against changed or reordered FAQs.
+The dataset stores the normalized FAQ content hash and `contact_forms_version`,
+a hash of the pinned official contact catalog (excluding its fetch timestamp).
+If FAQs or contact subjects/URLs change, the runner stops until labels and source
+IDs are reviewed and the corresponding hash is updated. This avoids silently
+evaluating old labels against changed sources or routing destinations.
 Changing label status to `human_reviewed` requires a named `reviewed_by` value.
 That is an attestation by the person editing the dataset, not independent proof
 of an external review. Dataset changes create a new evaluation version/hash and
 require a new run; old results cannot silently adopt revised labels.
+
+The catalog revision retains all original 30 requests and their expected actions.
+Their seven escalation destinations remain appropriate after reviewing the live
+form subjects; rubrics clarify services, complaints and image-policy questions.
+Cases 31-34 add suggestions, institutional press, mobile interface issues and
+phone-number access. These new destinations should not be collapsed into `outros`.
+Routing precedence is an assistant interpretation of the published subjects,
+not a routing guarantee from CustoJusto, and still needs owner validation.
 
 ## Commands
 
@@ -76,8 +88,8 @@ latency, not a latency SLA. Token counts and monetary cost are not measured.
 
 Published baseline artifacts live under `docs/evaluations/`; exploratory output
 under `reports/` is ignored by git. Raw results include model names, retrieval
-settings, UTC run time, Git revision, corpus hash, and dataset/implementation/
-evaluator hashes. The implementation hash identifies uncommitted code too;
+settings, UTC run time, Git revision, corpus/contact catalog hashes, and dataset/
+implementation/contact-router/evaluator hashes. Code hashes identify uncommitted changes too;
 the Git revision alone does not imply a clean worktree.
 
 ## What the automatic metrics mean
@@ -134,6 +146,11 @@ Regenerate reports from annotated results without API calls:
 
 Dataset and split must match the saved run. Review changes to result JSON are
 picked up when reports regenerate; chatbot calls are not repeated.
+The preserved v1.0 baseline cannot be regenerated against the v1.1 dataset. Its
+original labels are archived in `docs/evaluations/triage-cases-v1.json` for audit;
+the current runner requires the new contact-catalog version field. Run a fresh
+development evaluation after reviewing the revised draft labels instead of
+overwriting or relabelling that historical baseline.
 
 The course PDF's 30-request recommendation motivates this initial dataset, not
 a claim of statistical significance or representative production accuracy.

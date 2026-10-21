@@ -18,6 +18,7 @@ from openai import OpenAI
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 import chat_bot as bot
+import contact_forms
 
 ROOT = Path(__file__).resolve().parent
 DATASET_PATH = ROOT / "data" / "evaluations" / "triage_cases.json"
@@ -65,6 +66,7 @@ class EvaluationDataset(StrictModel):
     label_status: Literal["draft_for_human_review", "human_reviewed"]
     reviewed_by: str | None
     corpus_version: str
+    contact_forms_version: str
     cases: list[EvaluationCase] = Field(min_length=1)
 
     @model_validator(mode="after")
@@ -108,6 +110,8 @@ def load_dataset(path: Path = DATASET_PATH) -> EvaluationDataset:
     records = bot.load_faq_records()
     if dataset.corpus_version != bot.faq_version(records):
         raise ValueError("FAQ corpus changed: review the labels and update corpus_version first.")
+    if dataset.contact_forms_version != contact_forms.CONTACT_FORMS_VERSION:
+        raise ValueError("Contact forms changed: review the labels and update contact_forms_version first.")
     known_ids = {record.chunk_id for record in records}
     for case in dataset.cases:
         for group in case.expected_source_groups:
@@ -321,8 +325,10 @@ def run_metadata(dataset: EvaluationDataset, dataset_path: Path, split: str) -> 
         "lexical_top_k": bot.LEXICAL_TOP_K,
         "min_similarity": bot.MIN_SIMILARITY,
         "corpus_version": dataset.corpus_version,
+        "contact_forms_version": dataset.contact_forms_version,
         "dataset_sha256": file_hash(dataset_path),
         "implementation_sha256": file_hash(Path(bot.__file__)),
+        "contact_router_sha256": file_hash(Path(contact_forms.__file__)),
         "evaluator_sha256": file_hash(Path(__file__)),
         "git_revision": revision,
         "label_status": dataset.label_status,

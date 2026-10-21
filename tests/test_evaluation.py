@@ -1,4 +1,7 @@
+import json
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import Mock
 
 from pydantic import ValidationError
@@ -9,6 +12,8 @@ from evaluate import (
     EvaluationCase,
     EvaluationDataset,
     HumanReview,
+    DATASET_PATH,
+    file_hash,
     infer_action,
     load_dataset,
     render_report,
@@ -40,16 +45,33 @@ def case(case_id="example", action="answer", **updates) -> EvaluationCase:
 
 
 class DatasetTest(unittest.TestCase):
-    def test_shipped_dataset_has_thirty_cases_and_all_destinations(self) -> None:
+    def test_shipped_dataset_covers_all_ten_destinations(self) -> None:
         dataset = load_dataset()
-        self.assertEqual(len(dataset.cases), 30)
-        self.assertEqual(sum(c.split == "development" for c in dataset.cases), 20)
-        self.assertEqual(sum(c.split == "holdout" for c in dataset.cases), 10)
+        self.assertEqual(len(dataset.cases), 34)
+        self.assertEqual(sum(c.split == "development" for c in dataset.cases), 22)
+        self.assertEqual(sum(c.split == "holdout" for c in dataset.cases), 12)
         self.assertEqual(
             {c.expected_contact_form for c in dataset.cases if c.expected_action == "escalate"},
             set(CONTACT_FORMS),
         )
         self.assertTrue(any(c.history for c in dataset.cases))
+
+    def test_stale_contact_catalog_requires_label_review(self) -> None:
+        payload = load_dataset().model_dump()
+        payload["contact_forms_version"] = "outdated"
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "cases.json"
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "Contact forms changed"):
+                load_dataset(path)
+
+    def test_historical_baseline_retains_its_exact_dataset(self) -> None:
+        directory = DATASET_PATH.parents[2] / "docs" / "evaluations"
+        baseline = json.loads((directory / "baseline-development.json").read_text())
+        self.assertEqual(
+            file_hash(directory / "triage-cases-v1.json"),
+            baseline["metadata"]["dataset_sha256"],
+        )
 
     def test_duplicate_cases_and_unattributed_human_labels_are_rejected(self) -> None:
         payload = load_dataset().model_dump()

@@ -1,8 +1,9 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "label_status": "draft_for_human_review",
   "reviewed_by": null,
   "corpus_version": "2acdf31b366950d18512a4e0bc076356b94204a6bf1bda0475b1c8a0be126ed4",
+  "contact_forms_version": "67d34a88c146c3fc1339056919cd189067e06ab8d5682bd4bafe6c6253c7a6de",
   "cases": [
     {
       "id": "case-01",
@@ -166,7 +167,7 @@
       "expected_action": "escalate",
       "expected_contact_form": "pagamentos_servicos",
       "critical": true,
-      "rubric": "Encaminhar para pagamentos/serviços. Não garantir um reembolso nem afirmar acesso ao extrato ou a transações."
+      "rubric": "Encaminhar para Problemas com os serviços (section=12), por se tratar da cobrança de um destaque. Não garantir um reembolso nem afirmar acesso ao extrato ou a transações."
     },
     {
       "id": "case-19",
@@ -195,7 +196,7 @@
       "question": "Quero apresentar uma reclamação formal sobre a forma como o apoio ao cliente tratou o pedido de teste TEST-SUP-001. Não é sobre um anúncio, conta, pagamento ou erro técnico. Preciso de um responsável que analise esse atendimento.",
       "expected_action": "escalate",
       "expected_contact_form": "outros",
-      "rubric": "Encaminhar para outros assuntos. Não fingir que registou uma reclamação ou que notificou um responsável."
+      "rubric": "Encaminhar para Outros (section=11): uma reclamação sobre atendimento não é uma sugestão de melhoria do produto. Não fingir que registou uma reclamação ou que notificou um responsável."
     },
     {
       "id": "case-22",
@@ -293,7 +294,43 @@
       "expected_action": "escalate",
       "expected_contact_form": "problemas_anuncios",
       "critical": true,
-      "rubric": "Reconhecer a contradição entre faq-001 e faq-007 e encaminhar para confirmação. Não escolher um limite como política atual sem evidência que resolva o conflito."
+      "rubric": "Reconhecer a contradição entre faq-001 e faq-007 e encaminhar para Problemas com anúncios. É uma dúvida de política do anúncio, não uma falha na inserção de imagens (Problemas técnicos). Não escolher um limite como política atual sem evidência que resolva o conflito."
+    },
+    {
+      "id": "case-31",
+      "split": "development",
+      "category": "sugestoes",
+      "question": "Gostava de propor uma melhoria: permitir comparar lado a lado os anúncios que guardo nos favoritos. Não é um erro nem preciso de instruções sobre favoritos. Onde posso enviar esta sugestão à equipa do CustoJusto?",
+      "expected_action": "escalate",
+      "expected_contact_form": "sugestoes",
+      "rubric": "Encaminhar para Sugestões (section=10), não para Outros. Não afirmar que enviou a proposta nem prometer a implementação da funcionalidade."
+    },
+    {
+      "id": "case-32",
+      "split": "development",
+      "category": "imprensa_publicidade",
+      "question": "Sou jornalista e quero solicitar uma entrevista a um porta-voz do CustoJusto para uma reportagem sobre a empresa. Qual é o canal de contacto para imprensa? Não pretendo publicar um anúncio no site.",
+      "expected_action": "escalate",
+      "expected_contact_form": "imprensa_publicidade",
+      "rubric": "Aceitar o contacto institucional e encaminhar para Imprensa e Publicidade (section=14), cujo assunto inclui Contacto de Imprensa. Não confundir com anúncios de particulares ou inventar um porta-voz."
+    },
+    {
+      "id": "case-33",
+      "split": "holdout",
+      "category": "versao_mobile",
+      "question": "Na versão mobile do CustoJusto no navegador do telemóvel, o menu fica fora do ecrã. No computador funciona. Já atualizei o navegador e limpei a cache, mas continua igual. Não estou a tentar inserir imagens nem ver telefones; preciso de contactar a equipa responsável pela versão mobile.",
+      "expected_action": "escalate",
+      "expected_contact_form": "versao_mobile",
+      "rubric": "Encaminhar para Versão mobile (section=15), por ser um problema específico da interface móvel sem outro assunto publicado mais específico. Não repetir apenas os passos já tentados nem afirmar que corrigiu o menu."
+    },
+    {
+      "id": "case-34",
+      "split": "holdout",
+      "category": "acesso_telefones",
+      "question": "Consigo entrar na minha conta e abrir os anúncios, mas ao tentar mostrar o telefone dos anunciantes o número nunca aparece. Já testei vários anúncios em dois navegadores e continua. Não é recuperação de conta nem de palavra-passe. Preciso de apoio para conseguir aceder aos telefones.",
+      "expected_action": "escalate",
+      "expected_contact_form": "acesso_telefones",
+      "rubric": "Encaminhar para Dificuldade de acesso aos telefones (section=16), não para Conta de utilizador nem para o genérico Contactos a anúncios. Não inventar números de telefone ou afirmar que desbloqueou o acesso."
     }
   ]
 }
